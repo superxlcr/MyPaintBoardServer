@@ -129,17 +129,25 @@ public class Protocol {
 		this.order = order;
 		this.content = content;
 		JSONObject jsonObject = new JSONObject();
-		jsonObject.put(ORDER, order);
-		jsonObject.put(CONTENT, content.toString());
+		try {
+			jsonObject.put(ORDER, order);
+			jsonObject.put(CONTENT, content.toString());
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
 		this.jsonStr = jsonObject.toString();
 	}
 
 	public Protocol(String jsonStr) {
 		this.jsonStr = jsonStr;
-		JSONObject jsonObject = new JSONObject(jsonStr);
-		this.order = jsonObject.getInt(ORDER);
-		String contentStr = jsonObject.getString(CONTENT);
-		this.content = new JSONArray(contentStr);
+		try {
+			JSONObject jsonObject = new JSONObject(jsonStr);
+			this.order = jsonObject.getInt(ORDER);
+			String contentStr = jsonObject.getString(CONTENT);
+			this.content = new JSONArray(contentStr);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public int getOrder() {
