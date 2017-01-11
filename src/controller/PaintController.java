@@ -33,7 +33,6 @@ public class PaintController {
 		if (room.getMemberList().contains(sender)) {
 			JSONArray jsonArray = new JSONArray();
 			jsonArray.put(room.getId()); // roomId
-			jsonArray.put(System.currentTimeMillis()); // time
 			jsonArray.put(sender.getUsername()); // username
 			// line (pointNumber + point (x , y) + color + width + isEraser)
 			List<Point> pointList = line.getPointList();
@@ -45,7 +44,7 @@ public class PaintController {
 			jsonArray.put(line.getColor());
 			jsonArray.put(line.getWidth());
 			jsonArray.put(line.isEraser());
-			Protocol sendProtocol = new Protocol(Protocol.DRAW, jsonArray);
+			Protocol sendProtocol = new Protocol(Protocol.DRAW, System.currentTimeMillis(), jsonArray);
 			// 推送给除发送者外的人
 			for (User user : room.getMemberList()) {
 				if (!user.equals(sender)) {
@@ -80,7 +79,7 @@ public class PaintController {
 			jsonArray.put(line.getWidth());
 			jsonArray.put(line.isEraser());
 		}
-		Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, jsonArray);
+		Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, System.currentTimeMillis(), jsonArray);
 		CommunicationController.getInstance().sendMessage(user, sendProtocol);
 	}
 }

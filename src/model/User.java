@@ -13,12 +13,14 @@ public class User {
 	private String password;
 	private String nickname;
 	private int roomId;
+	private long loginTime;
 	
 	public User(String username, String password, String nickname) {
 		this.username = username;
 		this.password = password;
 		this.nickname = nickname;
 		roomId = NO_ROOM_ID;
+		this.loginTime = 0;
 	}
 
 	public int getRoomId() {
@@ -61,6 +63,14 @@ public class User {
 		this.nickname = nickname;
 	}
 	
+	public long getLoginTime() {
+		return loginTime;
+	}
+
+	public void setLoginTime(long loginTime) {
+		this.loginTime = loginTime;
+	}
+
 	@Override
 	public String toString() {
 		return "User : " + username + " " + nickname + "\n";

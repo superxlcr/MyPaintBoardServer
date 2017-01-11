@@ -35,6 +35,7 @@ public class UserController {
 	 */
 	public User login(Protocol protocol, Writer writer) {
 		int sendOrder = Protocol.LOGIN;
+		long receiveTime = protocol.getTime(); // 获取接受时间
 		int stateCode = Protocol.LOGIN_UNKNOW_PRO; // 未知错误
 		JSONArray sendJsonArray = new JSONArray();
 		User user = null;
@@ -54,15 +55,20 @@ public class UserController {
 					stateCode = Protocol.LOGIN_ALREADY_LOGIN; // 已登录
 					sendJsonArray.put(stateCode);
 					user = null; // 登录失败返回null
+				} else if (user.getLoginTime() >= receiveTime) {
+					// 登录时间比接受时间后，协议作废，不用回复
+					return null;
 				} else {
 					stateCode = Protocol.LOGIN_SUCCESS; // 登录成功
+					user.setLoginTime(receiveTime);
 					sendJsonArray.put(stateCode);
+					sendJsonArray.put(user.getUsername());
 					sendJsonArray.put(user.getNickname());
 				}
 			}
 		}
 		// 发送消息
-		Protocol sendProtocol = new Protocol(sendOrder, sendJsonArray);
+		Protocol sendProtocol = new Protocol(sendOrder, receiveTime, sendJsonArray);
 		try {
 			writer.write(sendProtocol.getJsonStr());
 		} catch (Exception e) {
@@ -84,6 +90,7 @@ public class UserController {
 	 */
 	public User register(Protocol protocol, Writer writer) {
 		int sendOrder = Protocol.REGISTER;
+		long receiveTime = protocol.getTime(); // 接受到协议的时间
 		int stateCode = Protocol.REGISTER_UNKNOW_PRO; // 未知错误
 		JSONArray sendJsonArray = new JSONArray();
 		User user = null;
@@ -102,12 +109,14 @@ public class UserController {
 			if (DatabaseController.getInstance().insertNewUser(user)) {
 				stateCode = Protocol.REGISTER_SUCCESS; // 注册成功
 				sendJsonArray.put(stateCode);
+				sendJsonArray.put(user.getUsername());
+				sendJsonArray.put(user.getNickname());
 			} else {
 				user = null;
 			}
 		}
 		// 发送消息
-		Protocol sendProtocol = new Protocol(sendOrder, sendJsonArray);
+		Protocol sendProtocol = new Protocol(sendOrder, receiveTime, sendJsonArray);
 		try {
 			writer.write(sendProtocol.getJsonStr());
 		} catch (Exception e) {
@@ -128,6 +137,7 @@ public class UserController {
 	 */
 	public void editInfo(Protocol protocol, User sender) {
 		int sendOrder = Protocol.EDIT_INFO;
+		long receiveTime = protocol.getTime();
 		int stateCode = Protocol.EDIT_INFO_UNKNOW_PRO; // 未知错误
 		JSONArray sendJsonArray = new JSONArray();
 		JSONArray content = protocol.getContent();
@@ -141,7 +151,7 @@ public class UserController {
 			stateCode = Protocol.EDIT_INFO_SUCCESS; // 修改成功
 		}
 		sendJsonArray.put(stateCode);
-		Protocol sendProtocol = new Protocol(sendOrder, sendJsonArray);
+		Protocol sendProtocol = new Protocol(sendOrder, receiveTime, sendJsonArray);
 		CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 	}
 }

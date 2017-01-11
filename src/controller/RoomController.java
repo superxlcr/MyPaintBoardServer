@@ -56,7 +56,7 @@ public class RoomController {
 			sendJsonArray.put(room.getRoomName());
 			sendJsonArray.put(room.getMemberList().size());
 		}
-		Protocol sendProtocol = new Protocol(sendOrder, sendJsonArray);
+		Protocol sendProtocol = new Protocol(sendOrder, System.currentTimeMillis(), sendJsonArray);
 		CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 	}
 
@@ -70,6 +70,7 @@ public class RoomController {
 	 */
 	public void createRoom(Protocol protocol, User sender) {
 		int sendOrder = Protocol.CREATE_ROOM;
+		long receiveTime = protocol.getTime();
 		JSONArray sendJsonArray = new JSONArray();
 		// 生成id
 		int id = generateRoomId();
@@ -81,7 +82,7 @@ public class RoomController {
 		Room room = new Room(sender, id, roomName);
 		roomsMap.put(room, new Controllers(room));
 		// 回复消息
-		Protocol sendProtocol = new Protocol(sendOrder, sendJsonArray);
+		Protocol sendProtocol = new Protocol(sendOrder, receiveTime, sendJsonArray);
 		CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		if (sender.getRoomId() != User.NO_ROOM_ID) { // 退出原来的房间
 			Controllers controllers = getControllersByRoomId(sender.getRoomId());
@@ -125,14 +126,14 @@ public class RoomController {
 				controllers.memberController.notifyRoomMemberChange(null);
 			}
 			// 发送消息
-			Protocol sendProtocol = new Protocol(Protocol.JOIN_ROOM, sendJsonArray);
+			Protocol sendProtocol = new Protocol(Protocol.JOIN_ROOM, protocol.getTime(), sendJsonArray);
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		} catch (JSONException e) {
 			e.printStackTrace();
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.JOIN_ROOM_UNKNOW_PRO);
-			Protocol sendProtocol = new Protocol(Protocol.JOIN_ROOM, sendJsonArray);
+			Protocol sendProtocol = new Protocol(Protocol.JOIN_ROOM, protocol.getTime(), sendJsonArray);
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		}
 	}
@@ -165,14 +166,14 @@ public class RoomController {
 				controllers.memberController.notifyRoomMemberChange(null);
 			}
 			// 发送消息
-			Protocol sendProtocol = new Protocol(Protocol.EXIT_ROOM, sendJsonArray);
+			Protocol sendProtocol = new Protocol(Protocol.EXIT_ROOM, protocol.getTime(), sendJsonArray);
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		} catch (JSONException e) {
 			e.printStackTrace();
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.EXIT_ROOM_UNKNOW_PRO);
-			Protocol sendProtocol = new Protocol(Protocol.EXIT_ROOM, sendJsonArray);
+			Protocol sendProtocol = new Protocol(Protocol.EXIT_ROOM, protocol.getTime(), sendJsonArray);
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		}
 	}
@@ -195,7 +196,7 @@ public class RoomController {
 			} else { // 房间id错误
 				JSONArray sendJsonArray = new JSONArray();
 				sendJsonArray.put(Protocol.GET_ROOM_MEMBER_WRONG_ROOM_ID);
-				Protocol sendProtocol = new Protocol(Protocol.GET_ROOM_MEMBER, sendJsonArray);
+				Protocol sendProtocol = new Protocol(Protocol.GET_ROOM_MEMBER, protocol.getTime(), sendJsonArray);
 				CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 			}
 		} catch (JSONException e) {
@@ -203,7 +204,7 @@ public class RoomController {
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.GET_ROOM_MEMBER_UNKNOW_PRO);
-			Protocol sendProtocol = new Protocol(Protocol.GET_ROOM_MEMBER, sendJsonArray);
+			Protocol sendProtocol = new Protocol(Protocol.GET_ROOM_MEMBER, protocol.getTime(), sendJsonArray);
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		}
 	}
@@ -227,14 +228,14 @@ public class RoomController {
 				sendJsonArray.put(Protocol.MESSAGE_SUCCESS);
 			}
 			// 回复消息给发送者
-			Protocol sendProtocol = new Protocol(Protocol.MESSAGE, sendJsonArray);
+			Protocol sendProtocol = new Protocol(Protocol.MESSAGE, protocol.getTime(), sendJsonArray);
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		} catch (JSONException e) {
 			e.printStackTrace();
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.MESSAGE_UNKNOW_PRO);
-			Protocol sendProtocol = new Protocol(Protocol.MESSAGE, sendJsonArray);
+			Protocol sendProtocol = new Protocol(Protocol.MESSAGE, protocol.getTime(), sendJsonArray);
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		}
 	}
@@ -270,14 +271,14 @@ public class RoomController {
 				sendJsonArray.put(Protocol.DRAW_SUCCESS);
 			}
 			// 回复消息给发送者
-			Protocol sendProtocol = new Protocol(Protocol.DRAW, sendJsonArray);
+			Protocol sendProtocol = new Protocol(Protocol.DRAW, protocol.getTime(), sendJsonArray);
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		} catch (JSONException e) {
 			e.printStackTrace();
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.DRAW_UNKNOW_PRO);
-			Protocol sendProtocol = new Protocol(Protocol.DRAW, sendJsonArray);
+			Protocol sendProtocol = new Protocol(Protocol.DRAW, protocol.getTime(), sendJsonArray);
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		}
 	}
@@ -297,7 +298,7 @@ public class RoomController {
 			} else { // 房间id错误
 				JSONArray sendJsonArray = new JSONArray();
 				sendJsonArray.put(Protocol.GET_DRAW_LIST_WRONG_ROOM_ID);
-				Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, sendJsonArray);
+				Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, protocol.getTime(), sendJsonArray);
 				CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 			}
 		} catch (JSONException e) {
@@ -305,7 +306,7 @@ public class RoomController {
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.GET_DRAW_LIST_UNKONW_PRO);
-			Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, sendJsonArray);
+			Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, protocol.getTime(), sendJsonArray);
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		}
 	}

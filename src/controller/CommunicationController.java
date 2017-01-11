@@ -72,7 +72,7 @@ public class CommunicationController {
 			sb.append("\n*********************\n");
 			System.out.println(sb.toString());
 		}
-		
+
 		if (user == null)
 			return false;
 		Writer writer = onlineUsersMap.get(user);
@@ -91,7 +91,7 @@ public class CommunicationController {
 	public Map<User, Writer> getOnlineUsersMap() {
 		return onlineUsersMap;
 	}
-	
+
 	public boolean isEnableDebug() {
 		return enableDebug;
 	}
@@ -103,7 +103,7 @@ public class CommunicationController {
 	private String getTime() {
 		return new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(new Date());
 	}
-	
+
 }
 
 class SocketTask implements Runnable {
@@ -148,10 +148,7 @@ class SocketTask implements Runnable {
 						break;
 					}
 					case Protocol.REGISTER: { // 注册
-						user = UserController.getInstance().register(protocol, writer);
-						if (user != null) { // 注册成功
-							CommunicationController.getInstance().getOnlineUsersMap().put(user, writer);
-						}
+						UserController.getInstance().register(protocol, writer);
 						break;
 					}
 					case Protocol.EDIT_INFO: { // 编辑用户资料
@@ -193,7 +190,7 @@ class SocketTask implements Runnable {
 					case Protocol.HEART_BEAT: {
 						// 返回心跳成功
 						JSONArray content = new JSONArray();
-						Protocol sendProtocol = new Protocol(Protocol.HEART_BEAT, content);
+						Protocol sendProtocol = new Protocol(Protocol.HEART_BEAT, System.currentTimeMillis(), content);
 						CommunicationController.getInstance().sendMessage(user, sendProtocol);
 					}
 					default:
@@ -218,7 +215,7 @@ class SocketTask implements Runnable {
 			}
 		}
 	}
-	
+
 	private String getTime() {
 		return new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(new Date());
 	}

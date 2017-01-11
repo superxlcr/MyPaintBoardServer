@@ -17,7 +17,7 @@ public class Protocol {
 
 	// 登录
 	// c to s: username + password
-	// s to c: stateCode + nickname(if success)
+	// s to c: stateCode + (username + nickname)(if success)
 	public static final int LOGIN = 0;
 	public static final int LOGIN_SUCCESS = 0; // 成功
 	public static final int LOGIN_NO_USERNAME = LOGIN_SUCCESS + 1; // 非法用户名
@@ -25,9 +25,9 @@ public class Protocol {
 	public static final int LOGIN_UNKNOW_PRO = LOGIN_WRONG_PASSWORD + 1; // 未知错误
 	public static final int LOGIN_ALREADY_LOGIN = LOGIN_UNKNOW_PRO + 1; // 用户已在线
 
-	// 注册
+	// 注册（无登录功能）
 	// c to s: username + password + nickname
-	// s to c: stateCode
+	// s to c: stateCode + (username + nickname)(if success)
 	public static final int REGISTER = LOGIN + 1;
 	public static final int REGISTER_SUCCESS = 0; // 成功
 	public static final int REGISTER_REPEAT_USERNAME = REGISTER_SUCCESS + 1; // 重复用户名
@@ -71,9 +71,9 @@ public class Protocol {
 
 	// 获取房间成员
 	// c to s: roomId
-	// s to c: stateCode + roomId + time(long) + memberNumber + (username +
+	// s to c: stateCode + roomId + memberNumber + (username +
 	// nickname + isAdmin)(per user)
-	// push: stateCode + roomId + time(long) + memberNumber + (username +
+	// push: stateCode + roomId + memberNumber + (username +
 	// nickname + isAdmin)(per user)
 	public static final int GET_ROOM_MEMBER = EXIT_ROOM + 1;
 	public static final int GET_ROOM_MEMBER_SUCCESS = 0; // 成功才有后续内容
@@ -83,7 +83,7 @@ public class Protocol {
 	// 聊天消息
 	// c to s: roomId + message
 	// s to c: stateCode
-	// push: roomId + time + username + message
+	// push: roomId + username + message
 	public static final int MESSAGE = GET_ROOM_MEMBER + 1;
 	public static final int MESSAGE_SUCCESS = 0;
 	public static final int MESSAGE_WRONG_ROOM_ID = MESSAGE_SUCCESS + 1; // 错误的房间id
@@ -93,7 +93,7 @@ public class Protocol {
 	// c to s: roomId + line (pointNumber + point (x , y) + color + width +
 	// isEraser)
 	// s to c: stateCode
-	// push: roomId + time + username + line (pointNumber + point (x , y) +
+	// push: roomId + username + line (pointNumber + point (x , y) +
 	// color + width + isEraser)
 	public static final int DRAW = MESSAGE + 1;
 	public static final int DRAW_SUCCESS = 0;
@@ -114,23 +114,30 @@ public class Protocol {
 	// s to c:
 	public static final int HEART_BEAT = GET_DRAW_LIST + 1;
 
+	// 协议：指令 + 时间戳（防重复功能） + 内容
+	
 	public static final String ORDER = "order";
+	public static final String TIME = "time";
 	public static final String CONTENT = "content";
 
 	// 指令
 	private int order;
+	// 时间戳
+	private long time;
 	// 内容
 	private JSONArray content;
 
 	// json字符串
 	private String jsonStr;
 
-	public Protocol(int order, JSONArray content) {
+	public Protocol(int order, long time, JSONArray content) {
 		this.order = order;
+		this.time = time;
 		this.content = content;
 		JSONObject jsonObject = new JSONObject();
 		try {
 			jsonObject.put(ORDER, order);
+			jsonObject.put(TIME, time);
 			jsonObject.put(CONTENT, content.toString());
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -143,6 +150,7 @@ public class Protocol {
 		try {
 			JSONObject jsonObject = new JSONObject(jsonStr);
 			this.order = jsonObject.getInt(ORDER);
+			this.time = jsonObject.getLong(TIME);
 			String contentStr = jsonObject.getString(CONTENT);
 			this.content = new JSONArray(contentStr);
 		} catch (JSONException e) {
@@ -156,6 +164,14 @@ public class Protocol {
 
 	public void setOrder(int order) {
 		this.order = order;
+	}
+
+	public long getTime() {
+		return time;
+	}
+
+	public void setTime(long time) {
+		this.time = time;
 	}
 
 	public JSONArray getContent() {
@@ -219,6 +235,7 @@ public class Protocol {
 			break;
 		}
 		sb.append("order :" + orderStr + "\n");
+		sb.append("time :" + time + "\n");
 		sb.append("content :" + content + "\n");
 		return sb.toString();
 	}

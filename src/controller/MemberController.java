@@ -71,14 +71,13 @@ public class MemberController {
 		JSONArray jsonArray = new JSONArray();
 		jsonArray.put(Protocol.GET_ROOM_MEMBER_SUCCESS); // success
 		jsonArray.put(room.getId()); // id
-		jsonArray.put(System.currentTimeMillis()); // time
 		jsonArray.put(room.getMemberList().size()); // size
 		for (User tempUser : room.getMemberList()) {
 			jsonArray.put(tempUser.getUsername()); // username
 			jsonArray.put(tempUser.getNickname()); // nickname
 			jsonArray.put(isAdmin(tempUser)); // isAdmin
 		}
-		Protocol sendProtocol = new Protocol(Protocol.GET_ROOM_MEMBER, jsonArray);
+		Protocol sendProtocol = new Protocol(Protocol.GET_ROOM_MEMBER, System.currentTimeMillis(), jsonArray);
 		// 若user为空，则发给所有人
 		if (user != null) {
 			CommunicationController.getInstance().sendMessage(user, sendProtocol);

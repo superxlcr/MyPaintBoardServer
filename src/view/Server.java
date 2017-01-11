@@ -17,11 +17,13 @@ public class Server {
 		try {
 			ServerSocket ssocket = new ServerSocket(Protocol.PORT);
 			try {
-				System.out.println("The Server is listening on " + ssocket.getLocalSocketAddress().toString() + ":"
+				System.out.println("The Server is listening on " + ssocket.getInetAddress().getHostAddress().toString() + ":"
 						+ Protocol.PORT);
 				while (true) {
 					// 监听连接并使用线程池处理
 					Socket socket = ssocket.accept();
+					// 打印连接信息
+					System.out.println("A Client is connect :" + socket.getInetAddress().getHostAddress().toString());
 					// 开启调试模式
 					CommunicationController.getInstance().setEnableDebug(true);
 					// 把连接交给通信模块处理

@@ -29,10 +29,9 @@ public class ChatController {
 		if (room.getMemberList().contains(sender)) {
 			JSONArray jsonArray = new JSONArray();
 			jsonArray.put(room.getId()); // id
-			jsonArray.put(System.currentTimeMillis()); // time
 			jsonArray.put(sender.getUsername()); // username
 			jsonArray.put(message); // string
-			Protocol sendProtocol = new Protocol(Protocol.MESSAGE, jsonArray);
+			Protocol sendProtocol = new Protocol(Protocol.MESSAGE, System.currentTimeMillis(), jsonArray);
 			// 推送给除发送者外的人
 			for (User user : room.getMemberList()) {
 				if (!user.equals(sender)) {
