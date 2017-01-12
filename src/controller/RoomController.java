@@ -84,7 +84,7 @@ public class RoomController {
 		// 回复消息
 		Protocol sendProtocol = new Protocol(sendOrder, receiveTime, sendJsonArray);
 		CommunicationController.getInstance().sendMessage(sender, sendProtocol);
-		if (sender.getRoomId() != User.NO_ROOM_ID) { // 退出原来的房间
+		if (sender.getRoomId() != User.DUMMY_ID) { // 退出原来的房间
 			Controllers controllers = getControllersByRoomId(sender.getRoomId());
 			if (controllers != null) {
 				controllers.memberController.removeUser(sender);
@@ -114,7 +114,7 @@ public class RoomController {
 				sendJsonArray.put(Protocol.JOIN_ROOM_ALREADY_IN);
 			} else { // 成功
 				sendJsonArray.put(Protocol.JOIN_ROOM_SUCCESS);
-				if (sender.getRoomId() != User.NO_ROOM_ID) { // 退出原来的房间
+				if (sender.getRoomId() != User.DUMMY_ID) { // 退出原来的房间
 					Controllers controllersOld = getControllersByRoomId(sender.getRoomId());
 					if (controllersOld != null) {
 						controllersOld.memberController.removeUser(sender);
@@ -157,7 +157,7 @@ public class RoomController {
 			} else { // 成功
 				sendJsonArray.put(Protocol.EXIT_ROOM_SUCCESS);
 				// 变为无房间状态
-				sender.setRoomId(User.NO_ROOM_ID);
+				sender.setRoomId(User.DUMMY_ID);
 				if (controllers.memberController.isAdmin(sender)) { // 用户为管理员
 					// 改为无管理员
 					controllers.memberController.changeRoomAdmin(null);

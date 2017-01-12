@@ -2,6 +2,7 @@ package controller;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
@@ -10,6 +11,8 @@ import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -65,9 +68,9 @@ public class CommunicationController {
 		// 调试模式打印消息
 		if (enableDebug) {
 			StringBuilder sb = new StringBuilder();
-			sb.append("\n*********************\n");
+			sb.append("*********************\n");
 			sb.append("Send a message in " + getTime() + " to\n");
-			sb.append(user);
+			sb.append(user + "\n");
 			sb.append(protocol);
 			sb.append("\n*********************\n");
 			System.out.println(sb.toString());
@@ -100,8 +103,24 @@ public class CommunicationController {
 		this.enableDebug = enableDebug;
 	}
 
+//	/**
+//	 * 是否已经登录
+//	 * 
+//	 * @param user
+//	 *            用户
+//	 * @return 该用户是否已经登录
+//	 */
+//	public boolean isAlreadyLogin(User user) {
+//		for (User temp : onlineUsersMap.keySet()) {
+//			if (temp.equals(user)) {
+//				return true;
+//			}
+//		}
+//		return false;
+//	}
+
 	private String getTime() {
-		return new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(new Date());
+		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 	}
 
 }
@@ -110,6 +129,7 @@ class SocketTask implements Runnable {
 
 	private Socket socket;
 	private User user;
+	private Timer timer;
 
 	public SocketTask(Socket socket) {
 		this.socket = socket;
@@ -121,6 +141,43 @@ class SocketTask implements Runnable {
 		try {
 			Reader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
 			Writer writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
+			// 定时器子线程，开始发送心跳包
+			timer = new Timer();
+			timer.schedule(new TimerTask() {
+				@Override
+				public void run() {
+					try {
+						if (socket != null) {
+							// 发送心跳信息
+							Writer writer = new BufferedWriter(
+									new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
+							JSONArray jsonArray = new JSONArray();
+							Protocol sendProtocol = new Protocol(Protocol.HEART_BEAT, System.currentTimeMillis(),
+									jsonArray);
+							writer.write(sendProtocol.getJsonStr());
+							writer.flush();
+							if (CommunicationController.getInstance().isEnableDebug()) {
+								StringBuilder sb = new StringBuilder();
+								sb.append("*********************\n");
+								sb.append("Send a message in " + getTime() + " to\n");
+								sb.append(user + "\n");
+								sb.append(sendProtocol);
+								sb.append("\n*********************\n");
+								System.out.println(sb.toString());
+							}
+						} else {
+							// 连接中断终止任务
+							if (timer != null) {
+								timer.cancel();
+							}
+						}
+					} catch (IOException e) {
+						// 出现错误，终止定时器，关闭连接
+//						e.printStackTrace();
+						clearSocket();
+					}
+				}
+			}, 0, Protocol.HEART_BEAT_PERIOD);
 			// 监听消息
 			while (true) {
 				char data[] = new char[999];
@@ -131,9 +188,9 @@ class SocketTask implements Runnable {
 					// 调试模式打印消息
 					if (CommunicationController.getInstance().isEnableDebug()) {
 						StringBuilder sb = new StringBuilder();
-						sb.append("\n*********************\n");
-						sb.append("Send a message in " + getTime() + " to\n");
-						sb.append(user);
+						sb.append("*********************\n");
+						sb.append("Receive a message in " + getTime() + " to\n");
+						sb.append(user + "\n");
 						sb.append(protocol);
 						sb.append("\n*********************\n");
 						System.out.println(sb.toString());
@@ -141,14 +198,21 @@ class SocketTask implements Runnable {
 					// 处理命令
 					switch (protocol.getOrder()) {
 					case Protocol.LOGIN: { // 登录
-						user = UserController.getInstance().login(protocol, writer);
-						if (user != null) { // 登录成功
+						User temp = UserController.getInstance().login(protocol, writer,
+								(user != null ? user.getLoginTime() : 0));
+						if (temp != null) { // 登录成功
+							user = temp;
 							CommunicationController.getInstance().getOnlineUsersMap().put(user, writer);
 						}
 						break;
 					}
 					case Protocol.REGISTER: { // 注册
-						UserController.getInstance().register(protocol, writer);
+						User temp = UserController.getInstance().register(protocol, writer,
+								(user != null ? user.getLoginTime() : 0));
+						if (temp != null) { // 注册成功
+							user = temp;
+							CommunicationController.getInstance().getOnlineUsersMap().put(user, writer);
+						}
 						break;
 					}
 					case Protocol.EDIT_INFO: { // 编辑用户资料
@@ -189,9 +253,9 @@ class SocketTask implements Runnable {
 					}
 					case Protocol.HEART_BEAT: {
 						// 返回心跳成功
-						JSONArray content = new JSONArray();
-						Protocol sendProtocol = new Protocol(Protocol.HEART_BEAT, System.currentTimeMillis(), content);
-						CommunicationController.getInstance().sendMessage(user, sendProtocol);
+//						JSONArray content = new JSONArray();
+//						Protocol sendProtocol = new Protocol(Protocol.HEART_BEAT, System.currentTimeMillis(), content);
+//						CommunicationController.getInstance().sendMessage(user, sendProtocol);
 					}
 					default:
 						break;
@@ -201,22 +265,34 @@ class SocketTask implements Runnable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			// 退出操作
-			if (socket != null) {
-				try {
-					socket.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-			if (user != null) { // 已登录
-				// map删除退出的用户
-				CommunicationController.getInstance().getOnlineUsersMap().remove(user);
-			}
+			clearSocket();
 		}
 	}
 
 	private String getTime() {
-		return new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(new Date());
+		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+	}
+
+	private void clearSocket() {
+		// 打印断开连接信息
+		System.out.println("A Client is disconnect :" + socket.getInetAddress().getHostAddress().toString());
+		// 退出操作
+		if (socket != null) {
+			try {
+				socket.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		// 注销用户
+		if (user != null) { // 已登录
+			// map删除退出的用户
+			CommunicationController.getInstance().getOnlineUsersMap().remove(user);
+			user = null;
+		}
+		// 关闭定时器
+		if (timer != null) {
+			timer.cancel();
+		}
 	}
 }

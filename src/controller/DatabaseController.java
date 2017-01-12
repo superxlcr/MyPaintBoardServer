@@ -8,6 +8,7 @@ import model.User;
 
 /**
  * 数据库模块，单件
+ * 
  * @author superxlcr
  *
  */
@@ -20,12 +21,12 @@ public class DatabaseController {
 	}
 
 	// 构建表语句
-	private static final String buildTableSQL = "CREATE TABLE User (" + "username text primary key, "
-			+ "password text, " + "nickname text ) ";
+	private static final String buildTableSQL = "CREATE TABLE IF NOT EXISTS User ("
+			+ "id int primary key auto_increment, username varchar(255) unique, " + "password text, " + "nickname text ) ";
 
 	private DatabaseController() {
 		// 不存在则创建表
-		Database.getInstance().execute(buildTableSQL + "IF NOT EXIST User");
+		Database.getInstance().execute(buildTableSQL);
 	};
 
 	/**
@@ -60,9 +61,14 @@ public class DatabaseController {
 				.executeQuery("SELECT * FROM User where username = '" + username + "'");
 		if (resultSet != null) {
 			try {
-				String password = resultSet.getString(2);
-				String nickname = resultSet.getString(3);
-				return new User(username, password, nickname);
+				if (resultSet.first()) {
+					int id = resultSet.getInt(1);
+					String password = resultSet.getString(3);
+					String nickname = resultSet.getString(4);
+					return new User(id, username, password, nickname);
+				} else {
+					return null;
+				}
 			} catch (SQLException e) {
 				e.printStackTrace();
 				return null;
@@ -82,9 +88,14 @@ public class DatabaseController {
 				.executeQuery("SELECT * FROM User where nickname = '" + nickname + "'");
 		if (resultSet != null) {
 			try {
-				String username = resultSet.getString(1);
-				String password = resultSet.getString(2);
-				return new User(username, password, nickname);
+				if (resultSet.first()) {
+					int id = resultSet.getInt(1);
+					String username = resultSet.getString(1);
+					String password = resultSet.getString(2);
+					return new User(id, username, password, nickname);
+				} else {
+					return null;
+				}
 			} catch (SQLException e) {
 				e.printStackTrace();
 				return null;
@@ -105,8 +116,13 @@ public class DatabaseController {
 				"SELECT * FROM User where username = '" + username + "' AND password = '" + password + "'");
 		if (resultSet != null) {
 			try {
-				String nickname = resultSet.getString(3);
-				return new User(username, password, nickname);
+				if (resultSet.first()) {
+					int id = resultSet.getInt(1);
+					String nickname = resultSet.getString(3);
+					return new User(id, username, password, nickname);
+				} else {
+					return null;
+				}
 			} catch (SQLException e) {
 				e.printStackTrace();
 				return null;
