@@ -118,7 +118,7 @@ public class DatabaseController {
 			try {
 				if (resultSet.first()) {
 					int id = resultSet.getInt(1);
-					String nickname = resultSet.getString(3);
+					String nickname = resultSet.getString(4);
 					return new User(id, username, password, nickname);
 				} else {
 					return null;
@@ -139,6 +139,6 @@ public class DatabaseController {
 	 */
 	public boolean updateOldUser(User user) {
 		return Database.getInstance().execute(
-				"UPDATE User SET password = '" + user.getPassword() + "' , nickname = '" + user.getNickname() + "')");
+				"UPDATE User SET password = '" + user.getPassword() + "' , nickname = '" + user.getNickname() + "'");
 	}
 }

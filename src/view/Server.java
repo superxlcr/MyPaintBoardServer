@@ -18,8 +18,7 @@ public class Server {
 		try {
 			ServerSocket ssocket = new ServerSocket(Protocol.PORT);
 			try {
-				System.out.println("The Server is listening on " + ssocket.getInetAddress().getHostAddress().toString()
-						+ ":" + Protocol.PORT);
+				System.out.println("The Server is listening on port " + Protocol.PORT);
 				while (true) {
 					// 监听连接并使用线程池处理
 					Socket socket = ssocket.accept();

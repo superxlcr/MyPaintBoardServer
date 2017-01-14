@@ -72,7 +72,6 @@ public class CommunicationController {
 			sb.append("Send a message in " + getTime() + " to\n");
 			sb.append(user + "\n");
 			sb.append(protocol);
-			sb.append("\n*********************\n");
 			System.out.println(sb.toString());
 		}
 
@@ -193,7 +192,6 @@ class SocketTask implements Runnable {
 						sb.append("Receive a message in " + getTime() + " from\n");
 						sb.append(user + "\n");
 						sb.append(protocol);
-						sb.append("\n*********************\n");
 						System.out.println(sb.toString());
 					}
 					// 处理命令

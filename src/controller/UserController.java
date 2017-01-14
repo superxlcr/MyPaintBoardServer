@@ -83,7 +83,6 @@ public class UserController {
 				sb.append("Send a message in " + getTime() + " to\n");
 				sb.append(user + "\n");
 				sb.append(sendProtocol);
-				sb.append("\n*********************\n");
 				System.out.println(sb.toString());
 			}
 		} catch (Exception e) {
@@ -149,7 +148,6 @@ public class UserController {
 				sb.append("Send a message in " + getTime() + " to\n");
 				sb.append(user + "\n");
 				sb.append(sendProtocol);
-				sb.append("\n*********************\n");
 				System.out.println(sb.toString());
 			}
 		} catch (Exception e) {
@@ -178,6 +176,10 @@ public class UserController {
 		String username = content.getString(1);
 		String password = content.getString(2);
 		String nickname = content.getString(3);
+		// 密码为空则表示不作修改
+		if (password.isEmpty()) {
+			password = sender.getPassword();
+		}
 		User user = new User(id, username, password, nickname);
 		if (DatabaseController.getInstance().checkOldUserByNickname(nickname) != null) {
 			stateCode = Protocol.EDIT_INFO_REPEAT_NICKNAME; // 昵称重复

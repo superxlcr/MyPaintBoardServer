@@ -89,7 +89,7 @@ public class User {
 
 	@Override
 	public String toString() {
-		return "User : " + username + " " + nickname;
+		return "User : username:" + username + " nickname:" + nickname;
 	}
 
 }
