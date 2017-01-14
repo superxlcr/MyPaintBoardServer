@@ -46,7 +46,7 @@ public class RoomController {
 	 * @param sender
 	 *            发送信息者
 	 */
-	public void getRoomList(User sender) {
+	public void getRoomList(User sender, long time) {
 		int sendOrder = Protocol.GET_ROOM_LIST;
 		JSONArray sendJsonArray = new JSONArray();
 		int roomNumber = roomsMap.size();
@@ -56,7 +56,7 @@ public class RoomController {
 			sendJsonArray.put(room.getRoomName());
 			sendJsonArray.put(room.getMemberList().size());
 		}
-		Protocol sendProtocol = new Protocol(sendOrder, System.currentTimeMillis(), sendJsonArray);
+		Protocol sendProtocol = new Protocol(sendOrder, time, sendJsonArray);
 		CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 	}
 

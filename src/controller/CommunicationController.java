@@ -156,15 +156,16 @@ class SocketTask implements Runnable {
 									jsonArray);
 							writer.write(sendProtocol.getJsonStr());
 							writer.flush();
-							if (CommunicationController.getInstance().isEnableDebug()) {
-								StringBuilder sb = new StringBuilder();
-								sb.append("*********************\n");
-								sb.append("Send a message in " + getTime() + " to\n");
-								sb.append(user + "\n");
-								sb.append(sendProtocol);
-								sb.append("\n*********************\n");
-								System.out.println(sb.toString());
-							}
+							// 打印心跳包信息
+//							if (CommunicationController.getInstance().isEnableDebug()) {
+//								StringBuilder sb = new StringBuilder();
+//								sb.append("*********************\n");
+//								sb.append("Send a message in " + getTime() + " to\n");
+//								sb.append(user + "\n");
+//								sb.append(sendProtocol);
+//								sb.append("\n*********************\n");
+//								System.out.println(sb.toString());
+//							}
 						} else {
 							// 连接中断终止任务
 							if (timer != null) {
@@ -186,10 +187,10 @@ class SocketTask implements Runnable {
 					String jsonStr = new String(data, 0, len);
 					Protocol protocol = new Protocol(jsonStr);
 					// 调试模式打印消息
-					if (CommunicationController.getInstance().isEnableDebug()) {
+					if (CommunicationController.getInstance().isEnableDebug() && protocol.getOrder() != Protocol.HEART_BEAT) {
 						StringBuilder sb = new StringBuilder();
 						sb.append("*********************\n");
-						sb.append("Receive a message in " + getTime() + " to\n");
+						sb.append("Receive a message in " + getTime() + " from\n");
 						sb.append(user + "\n");
 						sb.append(protocol);
 						sb.append("\n*********************\n");
@@ -220,7 +221,7 @@ class SocketTask implements Runnable {
 						break;
 					}
 					case Protocol.GET_ROOM_LIST: { // 获取房间列表
-						RoomController.getInstance().getRoomList(user);
+						RoomController.getInstance().getRoomList(user, protocol.getTime());
 						break;
 					}
 					case Protocol.CREATE_ROOM: { // 创建房间
