@@ -32,12 +32,12 @@ public class RoomController {
 	private Map<Room, Controllers> roomsMap; // 房间列表
 	private Set<Integer> roomIdSet; // 房间id集合
 
-	private Random random;
+	private int nowIdSeed;
 
 	private RoomController() {
 		roomsMap = new ConcurrentHashMap<>();
 		roomIdSet = new CopyOnWriteArraySet<>();
-		random = new Random();
+		nowIdSeed = 0;
 	}
 
 	/**
@@ -75,9 +75,10 @@ public class RoomController {
 		// 生成id
 		int id = generateRoomId();
 		roomIdSet.add(id);
-		String roomName = sendJsonArray.getString(0);
-		// 回复内容为id
+		String roomName = protocol.getContent().getString(0);
+		// 回复内容为id + roomName
 		sendJsonArray.put(id);
+		sendJsonArray.put(roomName);
 		// 创建新房间
 		Room room = new Room(sender, id, roomName);
 		roomsMap.put(room, new Controllers(room));
@@ -216,7 +217,7 @@ public class RoomController {
 	 */
 	public void sendMessage(Protocol protocol, User sender) {
 		try {
-			JSONArray sendJsonArray = protocol.getContent();
+			JSONArray sendJsonArray = new JSONArray();
 			JSONArray content = protocol.getContent();
 			int id = content.getInt(0);
 			String message = content.getString(1);
@@ -312,12 +313,11 @@ public class RoomController {
 	}
 	
 	// 生成房间id
-	private int generateRoomId() {
-		int id = Math.abs(random.nextInt());
-		while (roomIdSet.contains(id)) {
-			id = random.nextInt();
+	private synchronized int generateRoomId() {
+		while (roomIdSet.contains(nowIdSeed)) {
+			nowIdSeed++;
 		}
-		return id;
+		return nowIdSeed;
 	}
 
 	// 通过id查找房间

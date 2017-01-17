@@ -44,7 +44,7 @@ public class PaintController {
 			jsonArray.put(line.getColor());
 			jsonArray.put(line.getWidth());
 			jsonArray.put(line.isEraser());
-			Protocol sendProtocol = new Protocol(Protocol.DRAW, System.currentTimeMillis(), jsonArray);
+			Protocol sendProtocol = new Protocol(Protocol.DRAW_PUSH, System.currentTimeMillis(), jsonArray);
 			// 推送给除发送者外的人
 			for (User user : room.getMemberList()) {
 				if (!user.equals(sender)) {

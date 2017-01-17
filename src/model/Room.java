@@ -32,6 +32,11 @@ public class Room {
 		this.roomName = roomName;
 		lineList = new CopyOnWriteArrayList<>();
 	}
+	
+	@Override
+	public int hashCode() {
+		return id;
+	}
 
 	@Override
 	public boolean equals(Object obj) {
