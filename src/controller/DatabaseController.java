@@ -22,7 +22,8 @@ public class DatabaseController {
 
 	// 构建表语句
 	private static final String buildTableSQL = "CREATE TABLE IF NOT EXISTS User ("
-			+ "id int primary key auto_increment, username varchar(255) unique, " + "password text, " + "nickname text ) ";
+			+ "id int primary key auto_increment, username varchar(255) unique, " + "password text, "
+			+ "nickname text ) ";
 
 	private DatabaseController() {
 		// 不存在则创建表
@@ -138,7 +139,7 @@ public class DatabaseController {
 	 * @return
 	 */
 	public boolean updateOldUser(User user) {
-		return Database.getInstance().execute(
-				"UPDATE User SET password = '" + user.getPassword() + "' , nickname = '" + user.getNickname() + "'");
+		return Database.getInstance().execute("UPDATE User SET password = '" + user.getPassword() + "' , nickname = '"
+				+ user.getNickname() + "' where username = '" + user.getUsername() + "'");
 	}
 }

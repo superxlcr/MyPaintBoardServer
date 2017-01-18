@@ -102,4 +102,12 @@ public class MemberController {
 		}
 		return false;
 	}
+	
+	/**
+	 * 获取房间成员数量
+	 * @return 成员数量
+	 */
+	public int getMemberNumber() {
+		return room.getMemberList().size();
+	}
 }

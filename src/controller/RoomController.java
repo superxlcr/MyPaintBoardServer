@@ -1,7 +1,6 @@
 package controller;
 
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -115,6 +114,18 @@ public class RoomController {
 				sendJsonArray.put(Protocol.JOIN_ROOM_ALREADY_IN);
 			} else { // 成功
 				sendJsonArray.put(Protocol.JOIN_ROOM_SUCCESS);
+				// 获取加入的房间
+				Room enterRoom = null;
+				for (Room room : roomsMap.keySet()) {
+					if (room.getId() == id) {
+						enterRoom = room;
+						break;
+					}
+				}
+				// 写入房间id与房间名
+				sendJsonArray.put(enterRoom.getId());
+				sendJsonArray.put(enterRoom.getRoomName());
+				
 				if (sender.getRoomId() != User.DUMMY_ID) { // 退出原来的房间
 					Controllers controllersOld = getControllersByRoomId(sender.getRoomId());
 					if (controllersOld != null) {
@@ -150,21 +161,26 @@ public class RoomController {
 	public void exitRoom(Protocol protocol, User sender) {
 		try {
 			JSONArray sendJsonArray = new JSONArray();
-			JSONArray content = protocol.getContent();
-			int id = content.getInt(0);
+			int id = sender.getRoomId();
+			// 变为无房间状态
+			sender.setRoomId(User.DUMMY_ID);
 			Controllers controllers = getControllersByRoomId(id);
 			if (controllers == null || !controllers.memberController.removeUser(sender)) {
 				sendJsonArray.put(Protocol.EXIT_ROOM_NOT_IN); // 用户不在该房间
 			} else { // 成功
 				sendJsonArray.put(Protocol.EXIT_ROOM_SUCCESS);
-				// 变为无房间状态
-				sender.setRoomId(User.DUMMY_ID);
 				if (controllers.memberController.isAdmin(sender)) { // 用户为管理员
 					// 改为无管理员
 					controllers.memberController.changeRoomAdmin(null);
 				}
-				// 房间成员状态变化通知
-				controllers.memberController.notifyRoomMemberChange(null);
+				if (controllers.memberController.getMemberNumber() != 0) {
+					// 房间成员状态变化通知
+					controllers.memberController.notifyRoomMemberChange(null);
+				} else {
+					// 房间最后一名成员退出，删除房间
+					Room dummyRoom = new Room(null, id, ""); // 用于删除的房间
+					roomsMap.remove(dummyRoom);
+				}
 			}
 			// 发送消息
 			Protocol sendProtocol = new Protocol(Protocol.EXIT_ROOM, protocol.getTime(), sendJsonArray);
