@@ -285,6 +285,11 @@ class SocketTask implements Runnable {
 		}
 		// 注销用户
 		if (user != null) { // 已登录
+			if (user.getRoomId() != User.DUMMY_ID) { // 用户退出时是有房间的，退出房间
+				JSONArray content = new JSONArray();
+				Protocol protocol = new Protocol(Protocol.EXIT_ROOM, System.currentTimeMillis(), content);
+				RoomController.getInstance().exitRoom(protocol, user);
+			}
 			// map删除退出的用户
 			CommunicationController.getInstance().getOnlineUsersMap().remove(user);
 			user = null;

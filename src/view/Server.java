@@ -20,6 +20,7 @@ public class Server {
 			try {
 				System.out.println("The Server is listening on port " + Protocol.PORT);
 				while (true) {
+					// TODO user exit ，exit room
 					// 监听连接并使用线程池处理
 					Socket socket = ssocket.accept();
 					// 打印连接信息
