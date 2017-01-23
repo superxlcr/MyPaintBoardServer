@@ -264,11 +264,11 @@ public class RoomController {
 	 */
 	public void sendDraw(Protocol protocol, User sender) {
 		try {
-			JSONArray sendJsonArray = protocol.getContent();
+			JSONArray sendJsonArray = new JSONArray();
 			JSONArray content = protocol.getContent();
 			int index = 0;
 			int id = content.getInt(index++); // roomId
-			// line (pointNumber + point (x , y) + color + width + isEraser)
+			// line (pointNumber + point (x , y) + color + width + isEraser + width + height)
 			int pointNumber = content.getInt(index++);
 			Point points[] = new Point[pointNumber];
 			for (int i = 0; i < pointNumber; i++) {
@@ -277,10 +277,13 @@ public class RoomController {
 				points[i] = new Point(x, y);
 			}
 			int color = content.getInt(index++);
-			int width = content.getInt(index++);
+			double paintWidth = content.getDouble(index++);
 			boolean isEraser = content.getBoolean(index++);
-			Line line = new Line(points, color, width, isEraser);
+			int width = content.getInt(index++);
+			int height = content.getInt(index++);
+			Line line = new Line(points, color, paintWidth, isEraser, width, height);
 			Controllers controllers = getControllersByRoomId(id); // 获取管理模块
+			// TODO 线段列表
 			if (controllers == null || !controllers.paintController.sendDraw(sender, line)) { 
 				// 没有该房间或用户不属于该房间
 				sendJsonArray.put(Protocol.DRAW_WRONG_ROOM_ID);

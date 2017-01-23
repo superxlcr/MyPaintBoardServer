@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 
 import model.Protocol;
 import model.User;
@@ -102,21 +103,21 @@ public class CommunicationController {
 		this.enableDebug = enableDebug;
 	}
 
-//	/**
-//	 * 是否已经登录
-//	 * 
-//	 * @param user
-//	 *            用户
-//	 * @return 该用户是否已经登录
-//	 */
-//	public boolean isAlreadyLogin(User user) {
-//		for (User temp : onlineUsersMap.keySet()) {
-//			if (temp.equals(user)) {
-//				return true;
-//			}
-//		}
-//		return false;
-//	}
+	// /**
+	// * 是否已经登录
+	// *
+	// * @param user
+	// * 用户
+	// * @return 该用户是否已经登录
+	// */
+	// public boolean isAlreadyLogin(User user) {
+	// for (User temp : onlineUsersMap.keySet()) {
+	// if (temp.equals(user)) {
+	// return true;
+	// }
+	// }
+	// return false;
+	// }
 
 	private String getTime() {
 		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
@@ -156,15 +157,18 @@ class SocketTask implements Runnable {
 							writer.write(sendProtocol.getJsonStr());
 							writer.flush();
 							// 打印心跳包信息
-//							if (CommunicationController.getInstance().isEnableDebug()) {
-//								StringBuilder sb = new StringBuilder();
-//								sb.append("*********************\n");
-//								sb.append("Send a message in " + getTime() + " to\n");
-//								sb.append(user + "\n");
-//								sb.append(sendProtocol);
-//								sb.append("\n*********************\n");
-//								System.out.println(sb.toString());
-//							}
+							// if
+							// (CommunicationController.getInstance().isEnableDebug())
+							// {
+							// StringBuilder sb = new StringBuilder();
+							// sb.append("*********************\n");
+							// sb.append("Send a message in " + getTime() + "
+							// to\n");
+							// sb.append(user + "\n");
+							// sb.append(sendProtocol);
+							// sb.append("\n*********************\n");
+							// System.out.println(sb.toString());
+							// }
 						} else {
 							// 连接中断终止任务
 							if (timer != null) {
@@ -173,22 +177,33 @@ class SocketTask implements Runnable {
 						}
 					} catch (IOException e) {
 						// 出现错误，终止定时器，关闭连接
-//						e.printStackTrace();
+						// e.printStackTrace();
 						clearSocket();
 					}
 				}
 			}, 0, Protocol.HEART_BEAT_PERIOD);
 			// 监听消息
 			while (true) {
-				char data[] = new char[999];
+				char data[] = new char[99999];
 				int len = 0;
 				while ((len = reader.read(data)) != -1) {
 					String jsonStr = new String(data, 0, len);
-					Protocol protocol = new Protocol(jsonStr);
+					Protocol protocol = null;
+					try {
+						protocol = new Protocol(jsonStr);
+					} catch (JSONException e) {
+						e.printStackTrace();
+					}
+					if (protocol == null) {
+						System.out.println("接收到无效的消息\n");
+						continue;
+					}
 					// 调试模式打印消息
-					if (CommunicationController.getInstance().isEnableDebug() && protocol.getOrder() != Protocol.HEART_BEAT) {
+					if (CommunicationController.getInstance().isEnableDebug()
+							&& protocol.getOrder() != Protocol.HEART_BEAT) {
 						StringBuilder sb = new StringBuilder();
 						sb.append("*********************\n");
+						sb.append("len :" + len + "\n");
 						sb.append("Receive a message in " + getTime() + " from\n");
 						sb.append(user + "\n");
 						sb.append(protocol);
@@ -252,9 +267,12 @@ class SocketTask implements Runnable {
 					}
 					case Protocol.HEART_BEAT: {
 						// 返回心跳成功
-//						JSONArray content = new JSONArray();
-//						Protocol sendProtocol = new Protocol(Protocol.HEART_BEAT, System.currentTimeMillis(), content);
-//						CommunicationController.getInstance().sendMessage(user, sendProtocol);
+						// JSONArray content = new JSONArray();
+						// Protocol sendProtocol = new
+						// Protocol(Protocol.HEART_BEAT,
+						// System.currentTimeMillis(), content);
+						// CommunicationController.getInstance().sendMessage(user,
+						// sendProtocol);
 					}
 					default:
 						break;

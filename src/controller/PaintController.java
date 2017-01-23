@@ -34,7 +34,7 @@ public class PaintController {
 			JSONArray jsonArray = new JSONArray();
 			jsonArray.put(room.getId()); // roomId
 			jsonArray.put(sender.getUsername()); // username
-			// line (pointNumber + point (x , y) + color + width + isEraser)
+			// line (pointNumber + point (x , y) + color + width + isEraser + width + height)
 			List<Point> pointList = line.getPointList();
 			jsonArray.put(pointList.size());
 			for (Point point : pointList) {
@@ -42,8 +42,10 @@ public class PaintController {
 				jsonArray.put(point.getY());
 			}
 			jsonArray.put(line.getColor());
-			jsonArray.put(line.getWidth());
+			jsonArray.put(line.getPaintWidth());
 			jsonArray.put(line.isEraser());
+			jsonArray.put(line.getWidth());
+			jsonArray.put(line.getHeight());
 			Protocol sendProtocol = new Protocol(Protocol.DRAW_PUSH, System.currentTimeMillis(), jsonArray);
 			// 推送给除发送者外的人
 			for (User user : room.getMemberList()) {
@@ -76,8 +78,10 @@ public class PaintController {
 				jsonArray.put(point.getY());
 			}
 			jsonArray.put(line.getColor());
-			jsonArray.put(line.getWidth());
+			jsonArray.put(line.getPaintWidth());
 			jsonArray.put(line.isEraser());
+			jsonArray.put(line.getWidth());
+			jsonArray.put(line.getHeight());
 		}
 		Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, System.currentTimeMillis(), jsonArray);
 		CommunicationController.getInstance().sendMessage(user, sendProtocol);
