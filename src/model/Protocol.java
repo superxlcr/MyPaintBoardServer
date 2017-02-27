@@ -112,8 +112,7 @@ public class Protocol {
 
 	// 同步绘制消息
 	// c to s: roomId
-	// s to c: stateCode + lineNumber + line (pointNumber + point (x , y) +
-	// color + width + isEraser + width + height)
+	// s to c: stateCode (if success, client will get draw_push)
 	public static final int GET_DRAW_LIST = DRAW_PUSH + 1;
 	public static final int GET_DRAW_LIST_SUCCESS = 0;
 	public static final int GET_DRAW_LIST_WRONG_ROOM_ID = GET_DRAW_LIST_SUCCESS + 1; // 错误的房间id

@@ -12,21 +12,25 @@ import model.User;
 
 /**
  * 绘画模块
+ * 
  * @author superxlcr
  *
  */
 public class PaintController {
-	
+
 	private Room room;
-	
+
 	public PaintController(Room room) {
 		this.room = room;
 	}
-	
+
 	/**
 	 * 转发绘画
-	 * @param sender 发送者
-	 * @param line 线段
+	 * 
+	 * @param sender
+	 *            发送者
+	 * @param line
+	 *            线段
 	 * @return 是否发送成功（发送者是否属于该房间）
 	 */
 	public boolean sendDraw(User sender, Line line) {
@@ -34,7 +38,8 @@ public class PaintController {
 			JSONArray jsonArray = new JSONArray();
 			jsonArray.put(room.getId()); // roomId
 			jsonArray.put(sender.getUsername()); // username
-			// line (pointNumber + point (x , y) + color + width + isEraser + width + height)
+			// line (pointNumber + point (x , y) + color + width + isEraser +
+			// width + height)
 			List<Point> pointList = line.getPointList();
 			jsonArray.put(pointList.size());
 			for (Point point : pointList) {
@@ -59,18 +64,28 @@ public class PaintController {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * 获取绘制历史消息
-	 * @param user 接收者
+	 * 
+	 * @param user
+	 *            接收者
 	 */
 	public void getLineList(User user) {
+		// 返回stateCode
 		JSONArray jsonArray = new JSONArray();
 		List<Line> lineList = room.getLineList();
 		jsonArray.put(Protocol.GET_DRAW_LIST_SUCCESS);
-		jsonArray.put(lineList.size()); // lineNumber
+		Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, System.currentTimeMillis(), jsonArray);
+		CommunicationController.getInstance().sendMessage(user, sendProtocol);
+
+		// draw_push发送线段信息
 		for (Line line : lineList) {
-			// line (pointNumber + point (x , y) + color + width + isEraser)
+			jsonArray = new JSONArray();
+			jsonArray.put(room.getId()); // roomId
+			jsonArray.put(""); // username
+			// line (pointNumber + point (x , y) + color + paintWidth + isEraser
+			// + width + height)
 			List<Point> pointList = line.getPointList();
 			jsonArray.put(pointList.size());
 			for (Point point : pointList) {
@@ -82,8 +97,14 @@ public class PaintController {
 			jsonArray.put(line.isEraser());
 			jsonArray.put(line.getWidth());
 			jsonArray.put(line.getHeight());
+			sendProtocol = new Protocol(Protocol.DRAW_PUSH, System.currentTimeMillis(), jsonArray);
+			CommunicationController.getInstance().sendMessage(user, sendProtocol);
+			// 等待一段时间让客户端处理线段
+			try {
+				Thread.sleep(5);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-		Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, System.currentTimeMillis(), jsonArray);
-		CommunicationController.getInstance().sendMessage(user, sendProtocol);
 	}
 }

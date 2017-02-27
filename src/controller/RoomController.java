@@ -283,7 +283,6 @@ public class RoomController {
 			int height = content.getInt(index++);
 			Line line = new Line(points, color, paintWidth, isEraser, width, height);
 			Controllers controllers = getControllersByRoomId(id); // 获取管理模块
-			// TODO 线段列表
 			if (controllers == null || !controllers.paintController.sendDraw(sender, line)) { 
 				// 没有该房间或用户不属于该房间
 				sendJsonArray.put(Protocol.DRAW_WRONG_ROOM_ID);
