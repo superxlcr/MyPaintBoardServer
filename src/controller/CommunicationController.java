@@ -210,72 +210,113 @@ class SocketTask implements Runnable {
 						System.out.println(sb.toString());
 					}
 					// 处理命令
-					switch (protocol.getOrder()) {
-					case Protocol.LOGIN: { // 登录
-						User temp = UserController.getInstance().login(protocol, writer,
-								(user != null ? user.getLoginTime() : 0));
-						if (temp != null) { // 登录成功
-							user = temp;
-							CommunicationController.getInstance().getOnlineUsersMap().put(user, writer);
+					if (user == null) { // 用户未登录状态
+						switch (protocol.getOrder()) {
+						case Protocol.LOGIN: { // 登录
+							User temp = UserController.getInstance().login(protocol, writer,
+									(user != null ? user.getLoginTime() : 0));
+							if (temp != null) { // 登录成功
+								user = temp;
+								CommunicationController.getInstance().getOnlineUsersMap().put(user, writer);
+							}
+							break;
 						}
-						break;
-					}
-					case Protocol.REGISTER: { // 注册
-						User temp = UserController.getInstance().register(protocol, writer,
-								(user != null ? user.getLoginTime() : 0));
-						if (temp != null) { // 注册成功
-							user = temp;
-							CommunicationController.getInstance().getOnlineUsersMap().put(user, writer);
+						case Protocol.REGISTER: { // 注册
+							User temp = UserController.getInstance().register(protocol, writer,
+									(user != null ? user.getLoginTime() : 0));
+							if (temp != null) { // 注册成功
+								user = temp;
+								CommunicationController.getInstance().getOnlineUsersMap().put(user, writer);
+							}
+							break;
 						}
-						break;
-					}
-					case Protocol.EDIT_INFO: { // 编辑用户资料
-						UserController.getInstance().editInfo(protocol, user);
-						break;
-					}
-					case Protocol.GET_ROOM_LIST: { // 获取房间列表
-						RoomController.getInstance().getRoomList(user, protocol.getTime());
-						break;
-					}
-					case Protocol.CREATE_ROOM: { // 创建房间
-						RoomController.getInstance().createRoom(protocol, user);
-						break;
-					}
-					case Protocol.JOIN_ROOM: { // 加入房间
-						RoomController.getInstance().joinRoom(protocol, user);
-						break;
-					}
-					case Protocol.EXIT_ROOM: { // 退出房间
-						RoomController.getInstance().exitRoom(protocol, user);
-						break;
-					}
-					case Protocol.GET_ROOM_MEMBER: { // 获取房间成员列表
-						RoomController.getInstance().checkRoomMember(protocol, user);
-						break;
-					}
-					case Protocol.MESSAGE: { // 发送消息
-						RoomController.getInstance().sendMessage(protocol, user);
-						break;
-					}
-					case Protocol.DRAW: {
-						RoomController.getInstance().sendDraw(protocol, user);
-						break;
-					}
-					case Protocol.GET_DRAW_LIST: {
-						RoomController.getInstance().checkRoomLineList(protocol, user);
-						break;
-					}
-					case Protocol.HEART_BEAT: {
-						// 返回心跳成功
-						// JSONArray content = new JSONArray();
-						// Protocol sendProtocol = new
-						// Protocol(Protocol.HEART_BEAT,
-						// System.currentTimeMillis(), content);
-						// CommunicationController.getInstance().sendMessage(user,
-						// sendProtocol);
-					}
-					default:
-						break;
+						case Protocol.HEART_BEAT: {
+							// 未登录时心跳包
+							break;
+						}
+						default: {
+							// 发送推送要求登录
+							JSONArray content = new JSONArray();
+							Protocol sendProtocol = new Protocol(Protocol.LOGIN_TIME_OUT_PUSH,
+									System.currentTimeMillis(), content);
+							writer.write(sendProtocol.getJsonStr());
+							writer.flush();
+							// 调试模式打印消息
+							if (CommunicationController.getInstance().isEnableDebug()) {
+								StringBuilder sb = new StringBuilder();
+								sb.append("*********************\n");
+								sb.append("Send a message in " + getTime() + " to\n");
+								sb.append(user + "\n");
+								sb.append(sendProtocol);
+								System.out.println(sb.toString());
+							}
+							break;
+						}
+						}
+					} else { // 用户已登录状态
+						switch (protocol.getOrder()) {
+						case Protocol.LOGIN: { // 登录
+							User temp = UserController.getInstance().login(protocol, writer,
+									(user != null ? user.getLoginTime() : 0));
+							if (temp != null) { // 登录成功
+								user = temp;
+								CommunicationController.getInstance().getOnlineUsersMap().put(user, writer);
+							}
+							break;
+						}
+						case Protocol.REGISTER: { // 注册
+							User temp = UserController.getInstance().register(protocol, writer,
+									(user != null ? user.getLoginTime() : 0));
+							if (temp != null) { // 注册成功
+								user = temp;
+								CommunicationController.getInstance().getOnlineUsersMap().put(user, writer);
+							}
+							break;
+						}
+						case Protocol.EDIT_INFO: { // 编辑用户资料
+							UserController.getInstance().editInfo(protocol, user);
+							break;
+						}
+						case Protocol.GET_ROOM_LIST: { // 获取房间列表
+							RoomController.getInstance().getRoomList(user, protocol.getTime());
+							break;
+						}
+						case Protocol.CREATE_ROOM: { // 创建房间
+							RoomController.getInstance().createRoom(protocol, user);
+							break;
+						}
+						case Protocol.JOIN_ROOM: { // 加入房间
+							RoomController.getInstance().joinRoom(protocol, user);
+							break;
+						}
+						case Protocol.EXIT_ROOM: { // 退出房间
+							RoomController.getInstance().exitRoom(protocol, user);
+							break;
+						}
+						case Protocol.GET_ROOM_MEMBER: { // 获取房间成员列表
+							RoomController.getInstance().checkRoomMember(protocol, user);
+							break;
+						}
+						case Protocol.MESSAGE: { // 发送消息
+							RoomController.getInstance().sendMessage(protocol, user);
+							break;
+						}
+						case Protocol.DRAW: {
+							RoomController.getInstance().sendDraw(protocol, user);
+							break;
+						}
+						case Protocol.GET_DRAW_LIST: {
+							// RoomController.getInstance().checkRoomLineList(protocol,
+							// user);
+							break;
+						}
+						case Protocol.HEART_BEAT: {
+							// 用户已登录心跳包
+							break;
+						}
+						default:
+							break;
+						}
 					}
 				}
 			}
