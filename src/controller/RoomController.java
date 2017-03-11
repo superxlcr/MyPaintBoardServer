@@ -330,6 +330,31 @@ public class RoomController {
 		}
 	}
 	
+	/**
+	 * 接收上传图片
+	 * @param protocol 协议内容
+	 * @param sender 发送者
+	 */
+	public void receiveUploadPic(Protocol protocol, User sender) {
+		boolean success = false;
+		try {
+			int id = sender.getRoomId();
+			Controllers controllers = getControllersByRoomId(id); // 获取管理模块
+			if (controllers != null && controllers.memberController.isAdmin(sender)) { // 判断是否拥有该房间以及是否为管理员
+				success = controllers.paintController.receiveUploadPic(sender, protocol);
+			}
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		// 判断是否需要返回终止传输
+		if (!success) {
+			JSONArray sendJsonArray = new JSONArray();
+			sendJsonArray.put(Protocol.UPLOAD_PIC_FAIL);
+			Protocol sendProtocol = new Protocol(Protocol.UPLOAD_PIC, protocol.getTime(), sendJsonArray);
+			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
+		}
+	}
+	
 	// 生成房间id
 	private synchronized int generateRoomId() {
 		while (roomIdSet.contains(nowIdSeed)) {

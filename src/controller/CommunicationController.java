@@ -5,8 +5,6 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -40,7 +38,7 @@ public class CommunicationController {
 	// 是否开启debug模式
 	private boolean enableDebug = false;
 	// 用户在线表
-	private Map<User, Writer> onlineUsersMap;
+	private Map<User, BufferedWriter> onlineUsersMap;
 	// 线程池
 	private ExecutorService executorService;
 
@@ -78,10 +76,11 @@ public class CommunicationController {
 
 		if (user == null)
 			return false;
-		Writer writer = onlineUsersMap.get(user);
+		BufferedWriter writer = onlineUsersMap.get(user);
 		if (writer != null) {
 			try {
 				writer.write(protocol.getJsonStr());
+				writer.newLine();
 				writer.flush();
 				return true;
 			} catch (Exception e) {
@@ -91,7 +90,7 @@ public class CommunicationController {
 		return false;
 	}
 
-	public Map<User, Writer> getOnlineUsersMap() {
+	public Map<User, BufferedWriter> getOnlineUsersMap() {
 		return onlineUsersMap;
 	}
 
@@ -139,8 +138,8 @@ class SocketTask implements Runnable {
 	@Override
 	public void run() {
 		try {
-			Reader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
-			Writer writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
+			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
 			// 定时器子线程，开始发送心跳包
 			timer = new Timer();
 			timer.schedule(new TimerTask() {
@@ -149,12 +148,13 @@ class SocketTask implements Runnable {
 					try {
 						if (socket != null) {
 							// 发送心跳信息
-							Writer writer = new BufferedWriter(
+							BufferedWriter writer = new BufferedWriter(
 									new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
 							JSONArray jsonArray = new JSONArray();
 							Protocol sendProtocol = new Protocol(Protocol.HEART_BEAT, System.currentTimeMillis(),
 									jsonArray);
 							writer.write(sendProtocol.getJsonStr());
+							writer.newLine();
 							writer.flush();
 							// 打印心跳包信息
 							// if
@@ -184,10 +184,8 @@ class SocketTask implements Runnable {
 			}, 0, Protocol.HEART_BEAT_PERIOD);
 			// 监听消息
 			while (true) {
-				char data[] = new char[99999];
-				int len = 0;
-				while ((len = reader.read(data)) != -1) {
-					String jsonStr = new String(data, 0, len);
+				String jsonStr = null;
+				while ((jsonStr = reader.readLine()) != null) {
 					Protocol protocol = null;
 					try {
 						protocol = new Protocol(jsonStr);
@@ -203,7 +201,7 @@ class SocketTask implements Runnable {
 							&& protocol.getOrder() != Protocol.HEART_BEAT) {
 						StringBuilder sb = new StringBuilder();
 						sb.append("*********************\n");
-						sb.append("len :" + len + "\n");
+						sb.append("len :" + jsonStr.length() + "\n");
 						sb.append("Receive a message in " + getTime() + " from\n");
 						sb.append(user + "\n");
 						sb.append(protocol);
@@ -233,6 +231,25 @@ class SocketTask implements Runnable {
 						case Protocol.HEART_BEAT: {
 							// 未登录时心跳包
 							break;
+						}
+						case Protocol.UPLOAD_PIC: { // 未登录，上传图片
+							// 发送拒绝接收
+							JSONArray content = new JSONArray();
+							content.put(Protocol.UPLOAD_PIC_FAIL); // 禁止传输
+							Protocol sendProtocol = new Protocol(Protocol.UPLOAD_PIC, System.currentTimeMillis(),
+									content);
+							writer.write(sendProtocol.getJsonStr());
+							writer.flush();
+							// 调试模式打印消息
+							if (CommunicationController.getInstance().isEnableDebug()) {
+								StringBuilder sb = new StringBuilder();
+								sb.append("*********************\n");
+								sb.append("Send a message in " + getTime() + " to\n");
+								sb.append(user + "\n");
+								sb.append(sendProtocol);
+								System.out.println(sb.toString());
+							}
+							// no break
 						}
 						default: {
 							// 发送推送要求登录
@@ -306,13 +323,15 @@ class SocketTask implements Runnable {
 							break;
 						}
 						case Protocol.GET_DRAW_LIST: {
-							// RoomController.getInstance().checkRoomLineList(protocol,
-							// user);
+							RoomController.getInstance().checkRoomLineList(protocol, user);
 							break;
 						}
 						case Protocol.HEART_BEAT: {
 							// 用户已登录心跳包
 							break;
+						}
+						case Protocol.UPLOAD_PIC: { // 上传图片
+							RoomController.getInstance().receiveUploadPic(protocol, user);
 						}
 						default:
 							break;

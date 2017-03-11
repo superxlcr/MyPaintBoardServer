@@ -1,6 +1,6 @@
 package controller;
 
-import java.io.Writer;
+import java.io.BufferedWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -37,7 +37,7 @@ public class UserController {
 	 *            旧用户的登录时间，防止遗留信息登录问题
 	 * @return 登录成功：user对象 失败：null
 	 */
-	public User login(Protocol protocol, Writer writer, long oldUserLoginTime) {
+	public User login(Protocol protocol, BufferedWriter writer, long oldUserLoginTime) {
 		int sendOrder = Protocol.LOGIN;
 		long receiveTime = protocol.getTime(); // 获取接受时间
 		int stateCode = Protocol.LOGIN_UNKNOW_PRO; // 未知错误
@@ -76,6 +76,7 @@ public class UserController {
 		Protocol sendProtocol = new Protocol(sendOrder, receiveTime, sendJsonArray);
 		try {
 			writer.write(sendProtocol.getJsonStr());
+			writer.newLine();
 			writer.flush();
 			if (CommunicationController.getInstance().isEnableDebug()) {
 				StringBuilder sb = new StringBuilder();
@@ -104,7 +105,7 @@ public class UserController {
 	 *            旧用户的登录时间，防止遗留信息登录问题
 	 * @return 注册成功：user对象 失败：null
 	 */
-	public User register(Protocol protocol, Writer writer, long oldUserLoginTime) {
+	public User register(Protocol protocol, BufferedWriter writer, long oldUserLoginTime) {
 		int sendOrder = Protocol.REGISTER;
 		long receiveTime = protocol.getTime(); // 接受到协议的时间
 		int stateCode = Protocol.REGISTER_UNKNOW_PRO; // 未知错误
@@ -141,6 +142,7 @@ public class UserController {
 		Protocol sendProtocol = new Protocol(sendOrder, receiveTime, sendJsonArray);
 		try {
 			writer.write(sendProtocol.getJsonStr());
+			writer.newLine();
 			writer.flush();
 			if (CommunicationController.getInstance().isEnableDebug()) {
 				StringBuilder sb = new StringBuilder();

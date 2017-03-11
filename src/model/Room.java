@@ -1,5 +1,6 @@
 package model;
 
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -22,7 +23,10 @@ public class Room {
 	
 	// 房间绘制线段列表
 	private List<Line> lineList;
-
+	
+	// 背景图片
+	private File bgPic;
+	
 	public Room(User admin, int id, String roomName) {
 		this.admin = admin;
 		// 创建成员列表，添加管理员
@@ -84,6 +88,14 @@ public class Room {
 
 	public void setLineList(List<Line> lineList) {
 		this.lineList = lineList;
+	}
+
+	public File getBgPic() {
+		return bgPic;
+	}
+
+	public void setBgPic(File bgPic) {
+		this.bgPic = bgPic;
 	}
 	
 }
