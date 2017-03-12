@@ -26,13 +26,11 @@ public class PaintController {
 	private Room room;
 
 	// 上传图片相关
-	private FileInputStream fis = null;
 	private FileOutputStream fos = null;
 	private boolean uploading;
 
 	public PaintController(Room room) {
 		this.room = room;
-		fis = null;
 		fos = null;
 		uploading = false;
 	}
@@ -113,6 +111,15 @@ public class PaintController {
 			sendProtocol = new Protocol(Protocol.DRAW_PUSH, System.currentTimeMillis(), jsonArray);
 			CommunicationController.getInstance().sendMessage(user, sendProtocol);
 		}
+
+		// 发完LineList，如果有背景图片，则请求发送背景图片
+		if (room.getBgPic() != null) {
+			// 请求推送上传的图片
+			JSONArray sendContent2 = new JSONArray();
+			sendContent2.put(Protocol.BG_PIC_PUSH_ASK);
+			Protocol sendProtocol2 = new Protocol(Protocol.BG_PIC_PUSH, System.currentTimeMillis(), sendContent2);
+			CommunicationController.getInstance().sendMessage(user, sendProtocol2);
+		}
 	}
 
 	/**
@@ -172,7 +179,9 @@ public class PaintController {
 				byte[] fileBytes = null;
 				try {
 					fileBytes = fileStr.getBytes("ISO-8859-1");
-//					System.out.println("len :" + len + "bytesLen : " + fileBytes.length + "strLen : " + fileStr.getBytes("ISO-8859-1").length);
+					// System.out.println("len :" + len + "bytesLen : " +
+					// fileBytes.length + "strLen : " +
+					// fileStr.getBytes("ISO-8859-1").length);
 				} catch (UnsupportedEncodingException e) {
 					e.printStackTrace();
 					break;
@@ -198,12 +207,75 @@ public class PaintController {
 					e.printStackTrace();
 				}
 			}
-			// TODO
+			// 请求推送上传的图片
+			JSONArray sendContent = new JSONArray();
+			sendContent.put(Protocol.BG_PIC_PUSH_ASK);
+			Protocol sendProtocol = new Protocol(Protocol.BG_PIC_PUSH, System.currentTimeMillis(), sendContent);
+			// 发送给除上传者的其他人
+			for (User otherUser : room.getMemberList()) {
+				if (!user.equals(otherUser)) {
+					CommunicationController.getInstance().sendMessage(otherUser, sendProtocol);
+				}
+			}
 			break;
 		}
 		default:
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * 推送背景图片
+	 * 
+	 * @param user
+	 *            回复者
+	 * @param protocol
+	 *            协议内容
+	 */
+	public void pushBgPic(User user, Protocol protocol) {
+		JSONArray content = protocol.getContent();
+		int stateCode = content.getInt(0);
+		switch (stateCode) {
+		case Protocol.BG_PIC_PUSH_OK:
+			if (!uploading) {
+				FileInputStream fis = null;
+				try {
+					fis = new FileInputStream(room.getBgPic());
+					int len = 0;
+					byte[] fileBytes = new byte[1024];
+					while ((len = fis.read(fileBytes, 0, fileBytes.length)) > 0) {
+						JSONArray sendContent = new JSONArray();
+						sendContent.put(Protocol.BG_PIC_PUSH_CONTINUE);
+						sendContent.put(len);
+						sendContent.put(new String(fileBytes, 0, len, "ISO-8859-1"));
+						Protocol sendProtocol = new Protocol(Protocol.BG_PIC_PUSH, System.currentTimeMillis(),
+								sendContent);
+						CommunicationController.getInstance().sendMessage(user, sendProtocol);
+					}
+					// 发送完毕
+					JSONArray sendContent = new JSONArray();
+					sendContent.put(Protocol.BG_PIC_PUSH_FINISH);
+					Protocol sendProtocol = new Protocol(Protocol.BG_PIC_PUSH, System.currentTimeMillis(), sendContent);
+					CommunicationController.getInstance().sendMessage(user, sendProtocol);
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
+					if (fis != null) {
+						try {
+							fis.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+			break;
+		case Protocol.BG_PIC_PUSH_FAIL:
+			// 不进行操作
+			break;
+		default:
+			break;
+		}
 	}
 }

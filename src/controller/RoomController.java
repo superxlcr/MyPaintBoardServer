@@ -355,6 +355,19 @@ public class RoomController {
 		}
 	}
 	
+	/**
+	 * 推送背景图片
+	 * @param protocol 协议内容
+	 * @param sender 发送者
+	 */
+	public void pushBgPic(Protocol protocol, User sender) {
+		int id = sender.getRoomId();
+		Controllers controllers = getControllersByRoomId(id); // 获取管理模块
+		if (controllers != null) { // 判断是否拥有该房间
+			controllers.paintController.pushBgPic(sender, protocol);
+		}
+	}
+	
 	// 生成房间id
 	private synchronized int generateRoomId() {
 		while (roomIdSet.contains(nowIdSeed)) {
