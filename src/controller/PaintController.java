@@ -174,7 +174,7 @@ public class PaintController {
 		}
 		case Protocol.UPLOAD_PIC_CONTINUE: {
 			if (uploading) { // 传输状态才接收数据
-				int len = content.getInt(1);
+//				int len = content.getInt(1);
 				String fileStr = content.getString(2);
 				byte[] fileBytes = null;
 				try {
@@ -276,6 +276,27 @@ public class PaintController {
 			break;
 		default:
 			break;
+		}
+	}
+	
+	/**
+	 * 清空房间绘制线段
+	 * @param user 用户
+	 */
+	public void clearDraw(User user) {
+		// 清空绘制线段
+		room.getLineList().clear();
+		// 清除背景图片
+		room.setBgPic(null);
+		// 推送消息通知清除绘制
+		JSONArray content = new JSONArray();
+		// roomId
+		content.put(room.getId());
+		Protocol sendProtcol = new Protocol(Protocol.CLEAR_DRAW_PUSH, System.currentTimeMillis(), content);
+		for (User otherUser : room.getMemberList()) {
+			if (!otherUser.equals(user)) {
+				CommunicationController.getInstance().sendMessage(otherUser, sendProtcol);
+			}
 		}
 	}
 }

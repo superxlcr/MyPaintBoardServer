@@ -324,7 +324,7 @@ public class RoomController {
 			e.printStackTrace();
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
-			sendJsonArray.put(Protocol.GET_DRAW_LIST_UNKONW_PRO);
+			sendJsonArray.put(Protocol.GET_DRAW_LIST_UNKNOW_PRO);
 			Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, protocol.getTime(), sendJsonArray);
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		}
@@ -365,6 +365,32 @@ public class RoomController {
 		Controllers controllers = getControllersByRoomId(id); // 获取管理模块
 		if (controllers != null) { // 判断是否拥有该房间
 			controllers.paintController.pushBgPic(sender, protocol);
+		}
+	}
+	
+	/**
+	 * 清除绘制线段
+	 * @param sender 发送者
+	 */
+	public void clearDraw(User sender) {
+		int roomId = sender.getRoomId();
+		Controllers controllers = getControllersByRoomId(roomId);
+		if (controllers == null) { // 房间不存在
+			JSONArray sendContent = new JSONArray();
+			sendContent.put(Protocol.CLEAR_DRAW_WRONG_ROOM_ID);
+			Protocol sendProtocol = new Protocol(Protocol.CLEAR_DRAW, System.currentTimeMillis(), sendContent);
+			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
+		} else if (!controllers.memberController.isAdmin(sender)) { // 用户不是管理员
+			JSONArray sendContent = new JSONArray();
+			sendContent.put(Protocol.CLEAR_DRAW_NOT_ADMIN);
+			Protocol sendProtocol = new Protocol(Protocol.CLEAR_DRAW, System.currentTimeMillis(), sendContent);
+			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
+		} else { // 清除成功
+			controllers.paintController.clearDraw(sender);
+			JSONArray sendContent = new JSONArray();
+			sendContent.put(Protocol.CLEAR_DRAW_SUCCESS);
+			Protocol sendProtocol = new Protocol(Protocol.CLEAR_DRAW, System.currentTimeMillis(), sendContent);
+			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		}
 	}
 	

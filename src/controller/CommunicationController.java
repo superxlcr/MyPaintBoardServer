@@ -332,9 +332,15 @@ class SocketTask implements Runnable {
 						}
 						case Protocol.UPLOAD_PIC: { // 上传图片
 							RoomController.getInstance().receiveUploadPic(protocol, user);
+							break;
 						}
 						case Protocol.BG_PIC_PUSH: { // 推送背景图片回复
 							RoomController.getInstance().pushBgPic(protocol, user);
+							break;
+						}
+						case Protocol.CLEAR_DRAW: { // 清除绘制线段
+							RoomController.getInstance().clearDraw(user);
+							break;
 						}
 						default:
 							break;
