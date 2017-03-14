@@ -307,9 +307,9 @@ public class Protocol {
 		default:
 			break;
 		}
-		sb.append("order :" + orderStr + "\n");
-		sb.append("time :" + time + "\n");
-		sb.append("content :" + content + "\n");
+		sb.append("order :" + orderStr + "\r\n");
+		sb.append("time :" + time + "\r\n");
+		sb.append("content :" + content + "\r\n");
 		return sb.toString();
 	}
 

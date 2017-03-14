@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -35,8 +33,6 @@ public class CommunicationController {
 		return instance;
 	}
 
-	// 是否开启debug模式
-	private boolean enableDebug = false;
 	// 用户在线表
 	private Map<User, BufferedWriter> onlineUsersMap;
 	// 线程池
@@ -64,15 +60,8 @@ public class CommunicationController {
 	 * @return 是否发送成功
 	 */
 	public boolean sendMessage(User user, Protocol protocol) {
-		// 调试模式打印消息
-		if (enableDebug) {
-			StringBuilder sb = new StringBuilder();
-			sb.append("*********************\n");
-			sb.append("Send a message in " + getTime() + " to\n");
-			sb.append(user + "\n");
-			sb.append(protocol);
-			System.out.println(sb.toString());
-		}
+		// 打印日志
+		LogController.getInstance().writeLogProtocol(user, protocol, "Send");
 
 		if (user == null)
 			return false;
@@ -85,6 +74,7 @@ public class CommunicationController {
 				return true;
 			} catch (Exception e) {
 				e.printStackTrace();
+				LogController.getInstance().writeLogStr(e.toString());
 			}
 		}
 		return false;
@@ -92,14 +82,6 @@ public class CommunicationController {
 
 	public Map<User, BufferedWriter> getOnlineUsersMap() {
 		return onlineUsersMap;
-	}
-
-	public boolean isEnableDebug() {
-		return enableDebug;
-	}
-
-	public void setEnableDebug(boolean enableDebug) {
-		this.enableDebug = enableDebug;
 	}
 
 	// /**
@@ -117,10 +99,6 @@ public class CommunicationController {
 	// }
 	// return false;
 	// }
-
-	private String getTime() {
-		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-	}
 
 }
 
@@ -191,22 +169,14 @@ class SocketTask implements Runnable {
 						protocol = new Protocol(jsonStr);
 					} catch (JSONException e) {
 						e.printStackTrace();
+						LogController.getInstance().writeLogStr(e.toString());
 					}
 					if (protocol == null) {
-						System.out.println("接收到无效的消息\n");
+						LogController.getInstance().writeLogStr("接收到无效的消息\r\n");
 						continue;
 					}
-					// 调试模式打印消息
-					if (CommunicationController.getInstance().isEnableDebug()
-							&& protocol.getOrder() != Protocol.HEART_BEAT) {
-						StringBuilder sb = new StringBuilder();
-						sb.append("*********************\n");
-						sb.append("len :" + jsonStr.length() + "\n");
-						sb.append("Receive a message in " + getTime() + " from\n");
-						sb.append(user + "\n");
-						sb.append(protocol);
-						System.out.println(sb.toString());
-					}
+					// 打印除心跳包以外的所有日志
+					LogController.getInstance().writeLogProtocol(user, protocol, "Receive");
 					// 处理命令
 					if (user == null) { // 用户未登录状态
 						switch (protocol.getOrder()) {
@@ -240,15 +210,8 @@ class SocketTask implements Runnable {
 									content);
 							writer.write(sendProtocol.getJsonStr());
 							writer.flush();
-							// 调试模式打印消息
-							if (CommunicationController.getInstance().isEnableDebug()) {
-								StringBuilder sb = new StringBuilder();
-								sb.append("*********************\n");
-								sb.append("Send a message in " + getTime() + " to\n");
-								sb.append(user + "\n");
-								sb.append(sendProtocol);
-								System.out.println(sb.toString());
-							}
+							// 打印日志
+							LogController.getInstance().writeLogProtocol(user, sendProtocol, "Send");
 							// no break
 						}
 						default: {
@@ -258,15 +221,8 @@ class SocketTask implements Runnable {
 									System.currentTimeMillis(), content);
 							writer.write(sendProtocol.getJsonStr());
 							writer.flush();
-							// 调试模式打印消息
-							if (CommunicationController.getInstance().isEnableDebug()) {
-								StringBuilder sb = new StringBuilder();
-								sb.append("*********************\n");
-								sb.append("Send a message in " + getTime() + " to\n");
-								sb.append(user + "\n");
-								sb.append(sendProtocol);
-								System.out.println(sb.toString());
-							}
+							// 打印日志
+							LogController.getInstance().writeLogProtocol(user, sendProtocol, "Send");
 							break;
 						}
 						}
@@ -350,24 +306,22 @@ class SocketTask implements Runnable {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+			LogController.getInstance().writeLogStr(e.toString());
 		} finally {
 			clearSocket();
 		}
 	}
 
-	private String getTime() {
-		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-	}
-
 	private void clearSocket() {
 		// 打印断开连接信息
-		System.out.println("A Client is disconnect :" + socket.getInetAddress().getHostAddress().toString());
+		LogController.getInstance().writeLogStr("A Client is disconnect :" + socket.getInetAddress().getHostAddress().toString());
 		// 退出操作
 		if (socket != null) {
 			try {
 				socket.close();
 			} catch (Exception e) {
 				e.printStackTrace();
+				LogController.getInstance().writeLogStr(e.toString());
 			}
 		}
 		// 注销用户

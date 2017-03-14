@@ -5,6 +5,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import controller.LogController;
+
 /**
  * 数据库，单件
  * @author superxlcr
@@ -39,6 +41,7 @@ public class Database {
 			conn = DriverManager.getConnection(mysqlConnectStr, mysqlAccount, mysqlPassword);
 		} catch (Exception e) {
 			e.printStackTrace();
+			LogController.getInstance().writeLogStr(e.toString());
 			System.exit(0);
 		}
 	}
@@ -50,6 +53,7 @@ public class Database {
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
+			LogController.getInstance().writeLogStr(e.toString());
 		}
 		return false;
 	}
@@ -60,6 +64,7 @@ public class Database {
 			return statement.executeQuery(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
+			LogController.getInstance().writeLogStr(e.toString());
 		}
 		return null;
 	}

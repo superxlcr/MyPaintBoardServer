@@ -1,8 +1,6 @@
 package controller;
 
 import java.io.BufferedWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import org.json.JSONArray;
 
@@ -78,16 +76,11 @@ public class UserController {
 			writer.write(sendProtocol.getJsonStr());
 			writer.newLine();
 			writer.flush();
-			if (CommunicationController.getInstance().isEnableDebug()) {
-				StringBuilder sb = new StringBuilder();
-				sb.append("*********************\n");
-				sb.append("Send a message in " + getTime() + " to\n");
-				sb.append(user + "\n");
-				sb.append(sendProtocol);
-				System.out.println(sb.toString());
-			}
+			// 打印日志
+			LogController.getInstance().writeLogProtocol(user, sendProtocol, "Send");
 		} catch (Exception e) {
 			e.printStackTrace();
+			LogController.getInstance().writeLogStr(e.toString());
 			// 发送失败不能代表登录成功
 			user = null;
 		}
@@ -144,16 +137,11 @@ public class UserController {
 			writer.write(sendProtocol.getJsonStr());
 			writer.newLine();
 			writer.flush();
-			if (CommunicationController.getInstance().isEnableDebug()) {
-				StringBuilder sb = new StringBuilder();
-				sb.append("*********************\n");
-				sb.append("Send a message in " + getTime() + " to\n");
-				sb.append(user + "\n");
-				sb.append(sendProtocol);
-				System.out.println(sb.toString());
-			}
+			// 打印日志
+			LogController.getInstance().writeLogProtocol(user, sendProtocol, "Send");
 		} catch (Exception e) {
 			e.printStackTrace();
+			LogController.getInstance().writeLogStr(e.toString());
 			// 发送失败不能代表登录成功
 			user = null;
 		}
@@ -191,9 +179,5 @@ public class UserController {
 		sendJsonArray.put(stateCode);
 		Protocol sendProtocol = new Protocol(sendOrder, receiveTime, sendJsonArray);
 		CommunicationController.getInstance().sendMessage(sender, sendProtocol);
-	}
-
-	private String getTime() {
-		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 	}
 }

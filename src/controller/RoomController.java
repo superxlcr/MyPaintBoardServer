@@ -142,6 +142,7 @@ public class RoomController {
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		} catch (JSONException e) {
 			e.printStackTrace();
+			LogController.getInstance().writeLogStr(e.toString());
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.JOIN_ROOM_UNKNOW_PRO);
@@ -170,8 +171,8 @@ public class RoomController {
 			} else { // 成功
 				sendJsonArray.put(Protocol.EXIT_ROOM_SUCCESS);
 				if (controllers.memberController.isAdmin(sender)) { // 用户为管理员
-					// 改为无管理员
-					controllers.memberController.changeRoomAdmin(null);
+					// 更改管理员
+					controllers.memberController.changeRoomAdmin();
 				}
 				if (controllers.memberController.getMemberNumber() != 0) {
 					// 房间成员状态变化通知
@@ -187,6 +188,7 @@ public class RoomController {
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		} catch (JSONException e) {
 			e.printStackTrace();
+			LogController.getInstance().writeLogStr(e.toString());
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.EXIT_ROOM_UNKNOW_PRO);
@@ -218,6 +220,7 @@ public class RoomController {
 			}
 		} catch (JSONException e) {
 			e.printStackTrace();
+			LogController.getInstance().writeLogStr(e.toString());
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.GET_ROOM_MEMBER_UNKNOW_PRO);
@@ -249,6 +252,7 @@ public class RoomController {
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		} catch (JSONException e) {
 			e.printStackTrace();
+			LogController.getInstance().writeLogStr(e.toString());
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.MESSAGE_UNKNOW_PRO);
@@ -294,6 +298,7 @@ public class RoomController {
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		} catch (JSONException e) {
 			e.printStackTrace();
+			LogController.getInstance().writeLogStr(e.toString());
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.DRAW_UNKNOW_PRO);
@@ -322,6 +327,7 @@ public class RoomController {
 			}
 		} catch (JSONException e) {
 			e.printStackTrace();
+			LogController.getInstance().writeLogStr(e.toString());
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.GET_DRAW_LIST_UNKNOW_PRO);
@@ -345,6 +351,7 @@ public class RoomController {
 			}
 		} catch (JSONException e) {
 			e.printStackTrace();
+			LogController.getInstance().writeLogStr(e.toString());
 		}
 		// 判断是否需要返回终止传输
 		if (!success) {

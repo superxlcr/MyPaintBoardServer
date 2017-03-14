@@ -91,16 +91,18 @@ public class MemberController {
 	/**
 	 * 更改用户管理员
 	 * 
-	 * @param user
-	 *            要更改的管理员
-	 * @return 是否更改成功
 	 */
-	public boolean changeRoomAdmin(User user) {
-		if (room.getMemberList().contains(user)) {
-			room.setAdmin(user);
-			return true;
+	public void changeRoomAdmin() {
+		User oldAdmin = room.getAdmin();
+		// 更改用户管理员为新用户
+		for (User user : room.getMemberList()) {
+			if (!user.equals(oldAdmin)) {
+				room.setAdmin(user);
+				return;
+			}
 		}
-		return false;
+		// 无法更改则设为空值
+		room.setAdmin(null);
 	}
 	
 	/**
