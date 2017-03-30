@@ -172,7 +172,7 @@ class SocketTask implements Runnable {
 						LogController.getInstance().writeLogStr(e.toString());
 					}
 					if (protocol == null) {
-						LogController.getInstance().writeLogStr("接收到无效的消息\r\n");
+						LogController.getInstance().writeLogStr("接收到无效的消息: " + jsonStr + "\r\n");
 						continue;
 					}
 					// 打印除心跳包以外的所有日志

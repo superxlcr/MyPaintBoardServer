@@ -23,10 +23,9 @@ public class LogController {
 	public static final String NEW_LINE = "\r\n";
 
 	// 忽略写入日志的协议类型
-	public static final int[] IGNORE_PROTOCOL_ORDER = new int[] {
-			Protocol.HEART_BEAT, Protocol.UPLOAD_PIC, Protocol.BG_PIC_PUSH
-	};
-	
+	public static final int[] IGNORE_PROTOCOL_ORDER = new int[] { Protocol.HEART_BEAT, Protocol.UPLOAD_PIC,
+			Protocol.BG_PIC_PUSH };
+
 	public static LogController instance = null;
 
 	public static LogController getInstance() {
@@ -36,9 +35,14 @@ public class LogController {
 		return instance;
 	}
 
+	// 当前文件名称
+	private String nowFileName = null;
+	// 当前日志文件
+	private File nowFile = null;
+
 	private boolean outputToConsole;
 	private SimpleDateFormat sdf;
-	
+
 	public boolean isOutputToConsole() {
 		return outputToConsole;
 	}
@@ -66,31 +70,21 @@ public class LogController {
 	 */
 	public boolean writeLogStr(String logStr) {
 		String filePath = LOG_FILE_NAME + sdf.format(new Date()) + LOG_FILE_SUFFIX;
-		File file = new File("./" + LOG_DIRECTORY_NAME + "/" + filePath);
-		try {
-			if (!file.exists()) {
-				file.createNewFile();
-			}
-			FileOutputStream fos = new FileOutputStream(file, true);
-			fos.write(logStr.getBytes("UTF-8"));
-			fos.write(NEW_LINE.getBytes());
-			fos.flush();
-			fos.close();
-			if (outputToConsole) {
-				System.out.println(logStr + NEW_LINE);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
+		if (outputToConsole) {
+			System.out.println(logStr + NEW_LINE);
 		}
-		return true;
+		return writeStrToFile(filePath, logStr);
 	}
-	
+
 	/**
 	 * 写入协议日志
-	 * @param user 用户
-	 * @param protocol 协议内容
-	 * @param state 发送或者是接收状态
+	 * 
+	 * @param user
+	 *            用户
+	 * @param protocol
+	 *            协议内容
+	 * @param state
+	 *            发送或者是接收状态
 	 * @return 是否写入成功
 	 */
 	public boolean writeLogProtocol(User user, Protocol protocol, String state) {
@@ -102,26 +96,40 @@ public class LogController {
 			}
 		}
 		String filePath = LOG_FILE_NAME + sdf.format(new Date()) + LOG_FILE_SUFFIX;
-		File file = new File("./" + LOG_DIRECTORY_NAME + "/" + filePath);
-		try {
-			if (!file.exists()) {
-				file.createNewFile();
+		// 构造字符串
+		StringBuilder sb = new StringBuilder();
+		sb.append("*********************" + NEW_LINE);
+		sb.append("len :" + protocol.getJsonStr().length() + NEW_LINE);
+		sb.append(state + " a message in " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()) + " to"
+				+ NEW_LINE);
+		sb.append(user + NEW_LINE);
+		sb.append(protocol + NEW_LINE);
+		if (outputToConsole) {
+			System.out.println(sb.toString());
+		}
+		return writeStrToFile(filePath, sb.toString());
+	}
+
+	private boolean writeStrToFile(String fileName, String str) {
+		if (!(nowFileName != null && nowFile != null && fileName.equals(nowFileName))) {
+			File file = new File("./" + LOG_DIRECTORY_NAME + "/" + fileName);
+			try {
+				if (!file.exists()) {
+					file.createNewFile();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+				return false;
 			}
-			// 构造字符串
-			StringBuilder sb = new StringBuilder();
-			sb.append("*********************" + NEW_LINE);
-			sb.append("len :" + protocol.getJsonStr().length() + NEW_LINE);
-			sb.append(state + " a message in " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()) + " to" + NEW_LINE);
-			sb.append(user + NEW_LINE);
-			sb.append(protocol + NEW_LINE);
-			// 写入日志
-			FileOutputStream fos = new FileOutputStream(file, true);
-			fos.write(sb.toString().getBytes("UTF-8"));
+			nowFileName = fileName;
+			nowFile = file;
+		}
+		// 写入文件
+		try {
+			FileOutputStream fos = new FileOutputStream(nowFile, true);
+			fos.write(str.getBytes("UTF-8"));
 			fos.flush();
 			fos.close();
-			if (outputToConsole) {
-				System.out.println(sb.toString());
-			}
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;
