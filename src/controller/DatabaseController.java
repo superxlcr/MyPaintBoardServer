@@ -72,7 +72,7 @@ public class DatabaseController {
 				}
 			} catch (SQLException e) {
 				e.printStackTrace();
-				LogController.getInstance().writeLogStr(e.toString());
+				LogController.getInstance().writeErrorLogStr(e.toString());
 				return null;
 			}
 		}
@@ -100,7 +100,7 @@ public class DatabaseController {
 				}
 			} catch (SQLException e) {
 				e.printStackTrace();
-				LogController.getInstance().writeLogStr(e.toString());
+				LogController.getInstance().writeErrorLogStr(e.toString());
 				return null;
 			}
 		}
@@ -128,7 +128,7 @@ public class DatabaseController {
 				}
 			} catch (SQLException e) {
 				e.printStackTrace();
-				LogController.getInstance().writeLogStr(e.toString());
+				LogController.getInstance().writeErrorLogStr(e.toString());
 				return null;
 			}
 		}

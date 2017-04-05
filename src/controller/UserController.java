@@ -80,7 +80,7 @@ public class UserController {
 			LogController.getInstance().writeLogProtocol(user, sendProtocol, "Send");
 		} catch (Exception e) {
 			e.printStackTrace();
-			LogController.getInstance().writeLogStr(e.toString());
+			LogController.getInstance().writeErrorLogStr(e.toString());
 			// 发送失败不能代表登录成功
 			user = null;
 		}
@@ -141,7 +141,7 @@ public class UserController {
 			LogController.getInstance().writeLogProtocol(user, sendProtocol, "Send");
 		} catch (Exception e) {
 			e.printStackTrace();
-			LogController.getInstance().writeLogStr(e.toString());
+			LogController.getInstance().writeErrorLogStr(e.toString());
 			// 发送失败不能代表登录成功
 			user = null;
 		}

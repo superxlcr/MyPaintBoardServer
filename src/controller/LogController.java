@@ -19,6 +19,7 @@ public class LogController {
 
 	public static final String LOG_DIRECTORY_NAME = "log";
 	public static final String LOG_FILE_NAME = "log";
+	public static final String LOG_FILE_ERROR_SUFFIX = "_error";
 	public static final String LOG_FILE_SUFFIX = ".txt";
 	public static final String NEW_LINE = "\r\n";
 
@@ -39,6 +40,10 @@ public class LogController {
 	private String nowFileName = null;
 	// 当前日志文件
 	private File nowFile = null;
+	// 当前文件名称
+	private String nowErrorFileName = null;
+	// 当前日志文件
+	private File nowErrorFile = null;
 
 	private boolean outputToConsole;
 	private SimpleDateFormat sdf;
@@ -73,7 +78,7 @@ public class LogController {
 		if (outputToConsole) {
 			System.out.println(logStr + NEW_LINE);
 		}
-		return writeStrToFile(filePath, logStr);
+		return writeStrToFile(filePath, logStr + NEW_LINE);
 	}
 
 	/**
@@ -110,6 +115,43 @@ public class LogController {
 		return writeStrToFile(filePath, sb.toString());
 	}
 
+	/**
+	 * 写入错误日志
+	 * @param errorLogStr 错误信息
+	 * @return 是否写入成功
+	 */
+	public boolean writeErrorLogStr(String errorLogStr) {
+		errorLogStr += NEW_LINE;
+		String fileName = LOG_FILE_NAME + sdf.format(new Date()) + LOG_FILE_ERROR_SUFFIX + LOG_FILE_SUFFIX;
+		if (outputToConsole) {
+			System.out.println(errorLogStr);
+		}
+		if (!(nowErrorFileName != null && nowErrorFile != null && fileName.equals(nowErrorFileName))) {
+			File file = new File("./" + LOG_DIRECTORY_NAME + "/" + fileName);
+			try {
+				if (!file.exists()) {
+					file.createNewFile();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+				return false;
+			}
+			nowErrorFileName = fileName;
+			nowErrorFile = file;
+		}
+		// 写入文件
+		try {
+			FileOutputStream fos = new FileOutputStream(nowErrorFile, true);
+			fos.write(errorLogStr.getBytes("UTF-8"));
+			fos.flush();
+			fos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+	
 	private boolean writeStrToFile(String fileName, String str) {
 		if (!(nowFileName != null && nowFile != null && fileName.equals(nowFileName))) {
 			File file = new File("./" + LOG_DIRECTORY_NAME + "/" + fileName);

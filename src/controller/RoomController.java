@@ -142,7 +142,7 @@ public class RoomController {
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		} catch (JSONException e) {
 			e.printStackTrace();
-			LogController.getInstance().writeLogStr(e.toString());
+			LogController.getInstance().writeErrorLogStr(e.toString());
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.JOIN_ROOM_UNKNOW_PRO);
@@ -188,7 +188,7 @@ public class RoomController {
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		} catch (JSONException e) {
 			e.printStackTrace();
-			LogController.getInstance().writeLogStr(e.toString());
+			LogController.getInstance().writeErrorLogStr(e.toString());
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.EXIT_ROOM_UNKNOW_PRO);
@@ -220,7 +220,7 @@ public class RoomController {
 			}
 		} catch (JSONException e) {
 			e.printStackTrace();
-			LogController.getInstance().writeLogStr(e.toString());
+			LogController.getInstance().writeErrorLogStr(e.toString());
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.GET_ROOM_MEMBER_UNKNOW_PRO);
@@ -252,7 +252,7 @@ public class RoomController {
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		} catch (JSONException e) {
 			e.printStackTrace();
-			LogController.getInstance().writeLogStr(e.toString());
+			LogController.getInstance().writeErrorLogStr(e.toString());
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.MESSAGE_UNKNOW_PRO);
@@ -298,7 +298,7 @@ public class RoomController {
 			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		} catch (JSONException e) {
 			e.printStackTrace();
-			LogController.getInstance().writeLogStr(e.toString());
+			LogController.getInstance().writeErrorLogStr(e.toString());
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.DRAW_UNKNOW_PRO);
@@ -327,7 +327,7 @@ public class RoomController {
 			}
 		} catch (JSONException e) {
 			e.printStackTrace();
-			LogController.getInstance().writeLogStr(e.toString());
+			LogController.getInstance().writeErrorLogStr(e.toString());
 			// 回复消息
 			JSONArray sendJsonArray = new JSONArray();
 			sendJsonArray.put(Protocol.GET_DRAW_LIST_UNKNOW_PRO);
@@ -351,7 +351,7 @@ public class RoomController {
 			}
 		} catch (JSONException e) {
 			e.printStackTrace();
-			LogController.getInstance().writeLogStr(e.toString());
+			LogController.getInstance().writeErrorLogStr(e.toString());
 		}
 		// 判断是否需要返回终止传输
 		if (!success) {

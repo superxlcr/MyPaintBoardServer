@@ -142,7 +142,7 @@ public class PaintController {
 					fos.close();
 				} catch (IOException e) {
 					e.printStackTrace();
-					LogController.getInstance().writeLogStr(e.toString());
+					LogController.getInstance().writeErrorLogStr(e.toString());
 				}
 			}
 			// 创建文件与文件流
@@ -161,7 +161,7 @@ public class PaintController {
 				fos = new FileOutputStream(pic);
 			} catch (IOException e) {
 				e.printStackTrace();
-				LogController.getInstance().writeLogStr(e.toString());
+				LogController.getInstance().writeErrorLogStr(e.toString());
 				return false;
 			}
 			// 通知准许发送
@@ -186,7 +186,7 @@ public class PaintController {
 					// fileStr.getBytes("ISO-8859-1").length);
 				} catch (UnsupportedEncodingException e) {
 					e.printStackTrace();
-					LogController.getInstance().writeLogStr(e.toString());
+					LogController.getInstance().writeErrorLogStr(e.toString());
 					break;
 				}
 				try {
@@ -194,7 +194,7 @@ public class PaintController {
 					fos.flush();
 				} catch (IOException e) {
 					e.printStackTrace();
-					LogController.getInstance().writeLogStr(e.toString());
+					LogController.getInstance().writeErrorLogStr(e.toString());
 				}
 			}
 			break;
@@ -209,7 +209,7 @@ public class PaintController {
 					fos = null;
 				} catch (IOException e) {
 					e.printStackTrace();
-					LogController.getInstance().writeLogStr(e.toString());
+					LogController.getInstance().writeErrorLogStr(e.toString());
 				}
 			}
 			// 请求推送上传的图片
@@ -265,14 +265,14 @@ public class PaintController {
 					CommunicationController.getInstance().sendMessage(user, sendProtocol);
 				} catch (IOException e) {
 					e.printStackTrace();
-					LogController.getInstance().writeLogStr(e.toString());
+					LogController.getInstance().writeErrorLogStr(e.toString());
 				} finally {
 					if (fis != null) {
 						try {
 							fis.close();
 						} catch (IOException e) {
 							e.printStackTrace();
-							LogController.getInstance().writeLogStr(e.toString());
+							LogController.getInstance().writeErrorLogStr(e.toString());
 						}
 					}
 				}
