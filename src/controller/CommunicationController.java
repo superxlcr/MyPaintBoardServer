@@ -147,6 +147,8 @@ class SocketTask implements Runnable {
 					}
 					// 打印除心跳包以外的所有日志
 					LogController.getInstance().writeLogProtocol(user, protocol, "Receive");
+					// 计时
+					int timeIndex = TimeController.getInstance().begin();
 					// 处理命令
 					if (user == null) { // 用户未登录状态
 						switch (protocol.getOrder()) {
@@ -272,18 +274,18 @@ class SocketTask implements Runnable {
 							break;
 						}
 					}
+					// 计时结束
+					String time = TimeController.getInstance().end(timeIndex);
+					// 非心跳包打印计时
+					if (protocol.getOrder() != Protocol.HEART_BEAT) {
+						LogController.getInstance().writeLogStr("Takes " + time + " to deal with " + protocol.getOrderStr());
+					}
 				}
 			}
-		} catch (
-
-		Exception e)
-
-		{
+		} catch (Exception e) {
 			e.printStackTrace();
 			LogController.getInstance().writeErrorLogStr(e.toString());
-		} finally
-
-		{
+		} finally {
 			clearSocket();
 		}
 
@@ -300,7 +302,7 @@ class SocketTask implements Runnable {
 				e.printStackTrace();
 				LogController.getInstance().writeErrorLogStr(e.toString());
 			}
-			return false;	
+			return false;
 		}
 	}
 

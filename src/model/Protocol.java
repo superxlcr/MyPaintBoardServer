@@ -214,37 +214,7 @@ public class Protocol {
 		return order;
 	}
 
-	public void setOrder(int order) {
-		this.order = order;
-	}
-
-	public long getTime() {
-		return time;
-	}
-
-	public void setTime(long time) {
-		this.time = time;
-	}
-
-	public JSONArray getContent() {
-		return content;
-	}
-
-	public void setContent(JSONArray content) {
-		this.content = content;
-	}
-
-	public String getJsonStr() {
-		return jsonStr;
-	}
-
-	public void setJsonStr(String jsonStr) {
-		this.jsonStr = jsonStr;
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
+	public String getOrderStr() {
 		String orderStr = "unknow";
 		switch (order) {
 		case LOGIN:
@@ -307,7 +277,41 @@ public class Protocol {
 		default:
 			break;
 		}
-		sb.append("order :" + orderStr + "\r\n");
+		return orderStr;
+	}
+	
+	public void setOrder(int order) {
+		this.order = order;
+	}
+
+	public long getTime() {
+		return time;
+	}
+
+	public void setTime(long time) {
+		this.time = time;
+	}
+
+	public JSONArray getContent() {
+		return content;
+	}
+
+	public void setContent(JSONArray content) {
+		this.content = content;
+	}
+
+	public String getJsonStr() {
+		return jsonStr;
+	}
+
+	public void setJsonStr(String jsonStr) {
+		this.jsonStr = jsonStr;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("order :" + getOrderStr() + "\r\n");
 		sb.append("time :" + time + "\r\n");
 		sb.append("content :" + content + "\r\n");
 		return sb.toString();
