@@ -96,14 +96,18 @@ public class CommunicationController {
 
 class SocketTask implements Runnable {
 
+	private static final int MAX_FAIL_TIME = 3;
+	
 	private Socket socket;
 	private User user;
 	private Timer timer;
 	private BufferedWriter writer;
+	private int failTime;	// 接收数据失败次数
 
 	public SocketTask(Socket socket) {
 		this.socket = socket;
 		this.user = null;
+		this.failTime = 0;
 	}
 
 	@Override
@@ -143,7 +147,13 @@ class SocketTask implements Runnable {
 					}
 					if (protocol == null) {
 						LogController.getInstance().writeErrorLogStr("接收到无效的消息: " + jsonStr + "\r\n");
-						continue;
+						failTime++;
+						if (failTime >= MAX_FAIL_TIME) { // 失败次数过多，关闭连接
+							LogController.getInstance().writeLogStr("shut down bad socket: " + socket.getInetAddress().getHostAddress().toString());
+							break;
+						} else { // 忽略此次数据
+							continue;
+						}
 					}
 					// 打印除心跳包以外的所有日志
 					LogController.getInstance().writeLogProtocol(user, protocol, "Receive");
@@ -313,6 +323,10 @@ class SocketTask implements Runnable {
 		// 退出操作
 		if (socket != null) {
 			try {
+				// 关闭输入输出流
+				socket.shutdownInput();
+				socket.shutdownOutput();
+				// 关闭连接
 				socket.close();
 			} catch (Exception e) {
 				e.printStackTrace();
