@@ -25,6 +25,8 @@ public class Database {
 	private static final String mysqlAccount = "root";
 	// 数据库密码
 	private static final String mysqlPassword = "root";
+	// 数据库计时周期
+	private static final long CONNECTION_PERIOD = 6 * 60 * 60 * 1000;
 
 	private static Database instance = new Database();
 
@@ -34,11 +36,14 @@ public class Database {
 
 	// 数据库连接
 	private Connection conn = null;
+	// 数据库计时
+	private long connectionStartTime = 0;
 
 	private Database() {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			conn = DriverManager.getConnection(mysqlConnectStr, mysqlAccount, mysqlPassword);
+			connectionStartTime = System.currentTimeMillis();
 		} catch (Exception e) {
 			e.printStackTrace();
 			LogController.getInstance().writeErrorLogStr(e.toString());
@@ -46,7 +51,26 @@ public class Database {
 		}
 	}
 
+	private void refreshConnection() {
+		// 判断是否需要刷新连接
+		if (System.currentTimeMillis() - connectionStartTime >= CONNECTION_PERIOD) {
+			try {
+				if (conn != null) {
+					conn.close();
+				}
+				Class.forName("com.mysql.jdbc.Driver");
+				conn = DriverManager.getConnection(mysqlConnectStr, mysqlAccount, mysqlPassword);
+				connectionStartTime = System.currentTimeMillis();
+			} catch (Exception e) {
+				e.printStackTrace();
+				LogController.getInstance().writeErrorLogStr(e.toString());
+				System.exit(0);
+			}
+		}
+	}
+	
 	public boolean execute(String sql) {
+		refreshConnection();
 		try {
 			Statement statement = conn.createStatement();
 			statement.execute(sql);
@@ -59,6 +83,7 @@ public class Database {
 	}
 	
 	public ResultSet executeQuery(String sql) {
+		refreshConnection();
 		try {
 			Statement statement = conn.createStatement();
 			return statement.executeQuery(sql);
