@@ -36,15 +36,17 @@ public class PaintController {
 	}
 
 	/**
-	 * 转发绘画
+	 * 转发绘画，同步方法，防止绘制次序错乱，绘制成功发送通知
 	 * 
 	 * @param sender
 	 *            发送者
 	 * @param line
 	 *            线段
+	 * @param time
+	 * 			     回复用时间
 	 * @return 是否发送成功（发送者是否属于该房间）
 	 */
-	public boolean sendDraw(User sender, Line line) {
+	public synchronized boolean sendDraw(User sender, Line line, long time) {
 		if (room.getMemberList().contains(sender)) {
 			JSONArray jsonArray = new JSONArray();
 			jsonArray.put(room.getId()); // roomId
@@ -71,6 +73,11 @@ public class PaintController {
 			}
 			// 保存绘制线段
 			room.getLineList().add(line);
+			// 发送绘制成功通知
+			JSONArray replyJsonArray = new JSONArray();
+			replyJsonArray.put(Protocol.DRAW_SUCCESS);
+			Protocol replyProtocol = new Protocol(Protocol.DRAW, time, replyJsonArray);
+			CommunicationController.getInstance().sendMessage(sender, replyProtocol);
 			return true;
 		}
 		return false;

@@ -287,15 +287,13 @@ public class RoomController {
 			int height = content.getInt(index++);
 			Line line = new Line(points, color, paintWidth, isEraser, width, height);
 			Controllers controllers = getControllersByRoomId(id); // 获取管理模块
-			if (controllers == null || !controllers.paintController.sendDraw(sender, line)) { 
+			if (controllers == null || !controllers.paintController.sendDraw(sender, line, protocol.getTime())) { 
 				// 没有该房间或用户不属于该房间
 				sendJsonArray.put(Protocol.DRAW_WRONG_ROOM_ID);
-			} else {
-				sendJsonArray.put(Protocol.DRAW_SUCCESS);
+				// 回复消息给发送者
+				Protocol sendProtocol = new Protocol(Protocol.DRAW, protocol.getTime(), sendJsonArray);
+				CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 			}
-			// 回复消息给发送者
-			Protocol sendProtocol = new Protocol(Protocol.DRAW, protocol.getTime(), sendJsonArray);
-			CommunicationController.getInstance().sendMessage(sender, sendProtocol);
 		} catch (JSONException e) {
 			e.printStackTrace();
 			LogController.getInstance().writeErrorLogStr(e.toString());
