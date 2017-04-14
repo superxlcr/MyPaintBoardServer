@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -97,15 +98,23 @@ public class CommunicationController {
 class SocketTask implements Runnable {
 
 	private static final int MAX_FAIL_TIME = 3;
-	
+
 	private Socket socket;
 	private User user;
 	private Timer timer;
+	private BufferedReader reader;
 	private BufferedWriter writer;
-	private int failTime;	// 接收数据失败次数
+	private int failTime; // 接收数据失败次数
+	private boolean clear = false; // 是否清理完毕
 
 	public SocketTask(Socket socket) {
 		this.socket = socket;
+		try {
+			// 设置超时时间，两倍心跳端
+			socket.setSoTimeout((int) (Protocol.HEART_BEAT_PERIOD * 2));
+		} catch (SocketException e) {
+			e.printStackTrace();
+		}
 		this.user = null;
 		this.failTime = 0;
 	}
@@ -113,7 +122,7 @@ class SocketTask implements Runnable {
 	@Override
 	public void run() {
 		try {
-			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+			reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
 			writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
 			// 定时器子线程，开始发送心跳包
 			timer = new Timer();
@@ -125,171 +134,166 @@ class SocketTask implements Runnable {
 					if (socket != null && send(sendProtocol.getJsonStr())) {
 						// 发送心跳包成功
 					} else {
-						// 连接中断终止任务
-						if (timer != null) {
-							timer.cancel();
-						}
 						// 清除连接
 						clearSocket();
 					}
 				}
 			}, 0, Protocol.HEART_BEAT_PERIOD);
 			// 监听消息
-			while (true) {
-				String jsonStr = null;
-				while ((jsonStr = reader.readLine()) != null) {
-					Protocol protocol = null;
-					try {
-						protocol = new Protocol(jsonStr);
-					} catch (JSONException e) {
-						e.printStackTrace();
-						LogController.getInstance().writeErrorLogStr(e.toString());
+			String jsonStr = null;
+			while ((jsonStr = reader.readLine()) != null) {
+				Protocol protocol = null;
+				try {
+					protocol = new Protocol(jsonStr);
+				} catch (JSONException e) {
+					e.printStackTrace();
+					LogController.getInstance().writeErrorLogStr(e.toString());
+				}
+				if (protocol == null) {
+					LogController.getInstance().writeErrorLogStr("接收到无效的消息: " + jsonStr + "\r\n");
+					failTime++;
+					if (failTime >= MAX_FAIL_TIME) { // 失败次数过多，关闭连接
+						LogController.getInstance().writeLogStr(
+								"shut down bad socket: " + socket.getInetAddress().getHostAddress().toString());
+						break;
+					} else { // 忽略此次数据
+						continue;
 					}
-					if (protocol == null) {
-						LogController.getInstance().writeErrorLogStr("接收到无效的消息: " + jsonStr + "\r\n");
-						failTime++;
-						if (failTime >= MAX_FAIL_TIME) { // 失败次数过多，关闭连接
-							LogController.getInstance().writeLogStr("shut down bad socket: " + socket.getInetAddress().getHostAddress().toString());
-							break;
-						} else { // 忽略此次数据
-							continue;
+				}
+				// 打印除心跳包以外的所有日志
+				LogController.getInstance().writeLogProtocol(user, protocol, "Receive");
+				// 计时
+				int timeIndex = TimeController.getInstance().begin();
+				// 处理命令
+				if (user == null) { // 用户未登录状态
+					switch (protocol.getOrder()) {
+					case Protocol.LOGIN: { // 登录
+						User temp = UserController.getInstance().login(protocol, writer,
+								(user != null ? user.getLoginTime() : 0));
+						if (temp != null) { // 登录成功
+							user = temp;
+							CommunicationController.getInstance().getOnlineUsersMap().put(user, SocketTask.this);
 						}
+						break;
 					}
-					// 打印除心跳包以外的所有日志
-					LogController.getInstance().writeLogProtocol(user, protocol, "Receive");
-					// 计时
-					int timeIndex = TimeController.getInstance().begin();
-					// 处理命令
-					if (user == null) { // 用户未登录状态
-						switch (protocol.getOrder()) {
-						case Protocol.LOGIN: { // 登录
-							User temp = UserController.getInstance().login(protocol, writer,
-									(user != null ? user.getLoginTime() : 0));
-							if (temp != null) { // 登录成功
-								user = temp;
-								CommunicationController.getInstance().getOnlineUsersMap().put(user, SocketTask.this);
-							}
-							break;
+					case Protocol.REGISTER: { // 注册
+						User temp = UserController.getInstance().register(protocol, writer,
+								(user != null ? user.getLoginTime() : 0));
+						if (temp != null) { // 注册成功
+							user = temp;
+							CommunicationController.getInstance().getOnlineUsersMap().put(user, SocketTask.this);
 						}
-						case Protocol.REGISTER: { // 注册
-							User temp = UserController.getInstance().register(protocol, writer,
-									(user != null ? user.getLoginTime() : 0));
-							if (temp != null) { // 注册成功
-								user = temp;
-								CommunicationController.getInstance().getOnlineUsersMap().put(user, SocketTask.this);
-							}
-							break;
-						}
-						case Protocol.HEART_BEAT: {
-							// 未登录时心跳包
-							break;
-						}
-						case Protocol.UPLOAD_PIC: { // 未登录，上传图片
-							// 发送拒绝接收
-							JSONArray content = new JSONArray();
-							content.put(Protocol.UPLOAD_PIC_FAIL); // 禁止传输
-							Protocol sendProtocol = new Protocol(Protocol.UPLOAD_PIC, System.currentTimeMillis(),
-									content);
-							writer.write(sendProtocol.getJsonStr());
-							writer.flush();
-							// 打印日志
-							LogController.getInstance().writeLogProtocol(user, sendProtocol, "Send");
-							// no break
-						}
-						default: {
-							// 发送推送要求登录
-							JSONArray content = new JSONArray();
-							Protocol sendProtocol = new Protocol(Protocol.LOGIN_TIME_OUT_PUSH,
-									System.currentTimeMillis(), content);
-							writer.write(sendProtocol.getJsonStr());
-							writer.flush();
-							// 打印日志
-							LogController.getInstance().writeLogProtocol(user, sendProtocol, "Send");
-							break;
-						}
-						}
-					} else { // 用户已登录状态
-						switch (protocol.getOrder()) {
-						case Protocol.LOGIN: { // 登录
-							User temp = UserController.getInstance().login(protocol, writer,
-									(user != null ? user.getLoginTime() : 0));
-							if (temp != null) { // 登录成功
-								user = temp;
-								CommunicationController.getInstance().getOnlineUsersMap().put(user, SocketTask.this);
-							}
-							break;
-						}
-						case Protocol.REGISTER: { // 注册
-							User temp = UserController.getInstance().register(protocol, writer,
-									(user != null ? user.getLoginTime() : 0));
-							if (temp != null) { // 注册成功
-								user = temp;
-								CommunicationController.getInstance().getOnlineUsersMap().put(user, SocketTask.this);
-							}
-							break;
-						}
-						case Protocol.EDIT_INFO: { // 编辑用户资料
-							UserController.getInstance().editInfo(protocol, user);
-							break;
-						}
-						case Protocol.GET_ROOM_LIST: { // 获取房间列表
-							RoomController.getInstance().getRoomList(user, protocol.getTime());
-							break;
-						}
-						case Protocol.CREATE_ROOM: { // 创建房间
-							RoomController.getInstance().createRoom(protocol, user);
-							break;
-						}
-						case Protocol.JOIN_ROOM: { // 加入房间
-							RoomController.getInstance().joinRoom(protocol, user);
-							break;
-						}
-						case Protocol.EXIT_ROOM: { // 退出房间
-							RoomController.getInstance().exitRoom(protocol, user);
-							break;
-						}
-						case Protocol.GET_ROOM_MEMBER: { // 获取房间成员列表
-							RoomController.getInstance().checkRoomMember(protocol, user);
-							break;
-						}
-						case Protocol.MESSAGE: { // 发送消息
-							RoomController.getInstance().sendMessage(protocol, user);
-							break;
-						}
-						case Protocol.DRAW: {
-							RoomController.getInstance().sendDraw(protocol, user);
-							break;
-						}
-						case Protocol.GET_DRAW_LIST: {
-							RoomController.getInstance().checkRoomLineList(protocol, user);
-							break;
-						}
-						case Protocol.HEART_BEAT: {
-							// 用户已登录心跳包
-							break;
-						}
-						case Protocol.UPLOAD_PIC: { // 上传图片
-							RoomController.getInstance().receiveUploadPic(protocol, user);
-							break;
-						}
-						case Protocol.BG_PIC_PUSH: { // 推送背景图片回复
-							RoomController.getInstance().pushBgPic(protocol, user);
-							break;
-						}
-						case Protocol.CLEAR_DRAW: { // 清除绘制线段
-							RoomController.getInstance().clearDraw(user);
-							break;
-						}
-						default:
-							break;
-						}
+						break;
 					}
-					// 计时结束
-					String time = TimeController.getInstance().end(timeIndex);
-					// 非心跳包打印计时
-					if (protocol.getOrder() != Protocol.HEART_BEAT) {
-						LogController.getInstance().writeLogStr("Takes " + time + " to deal with " + protocol.getOrderStr());
+					case Protocol.HEART_BEAT: {
+						// 未登录时心跳包
+						break;
 					}
+					case Protocol.UPLOAD_PIC: { // 未登录，上传图片
+						// 发送拒绝接收
+						JSONArray content = new JSONArray();
+						content.put(Protocol.UPLOAD_PIC_FAIL); // 禁止传输
+						Protocol sendProtocol = new Protocol(Protocol.UPLOAD_PIC, System.currentTimeMillis(), content);
+						writer.write(sendProtocol.getJsonStr());
+						writer.flush();
+						// 打印日志
+						LogController.getInstance().writeLogProtocol(user, sendProtocol, "Send");
+						// no break
+					}
+					default: {
+						// 发送推送要求登录
+						JSONArray content = new JSONArray();
+						Protocol sendProtocol = new Protocol(Protocol.LOGIN_TIME_OUT_PUSH, System.currentTimeMillis(),
+								content);
+						writer.write(sendProtocol.getJsonStr());
+						writer.flush();
+						// 打印日志
+						LogController.getInstance().writeLogProtocol(user, sendProtocol, "Send");
+						break;
+					}
+					}
+				} else { // 用户已登录状态
+					switch (protocol.getOrder()) {
+					case Protocol.LOGIN: { // 登录
+						User temp = UserController.getInstance().login(protocol, writer,
+								(user != null ? user.getLoginTime() : 0));
+						if (temp != null) { // 登录成功
+							user = temp;
+							CommunicationController.getInstance().getOnlineUsersMap().put(user, SocketTask.this);
+						}
+						break;
+					}
+					case Protocol.REGISTER: { // 注册
+						User temp = UserController.getInstance().register(protocol, writer,
+								(user != null ? user.getLoginTime() : 0));
+						if (temp != null) { // 注册成功
+							user = temp;
+							CommunicationController.getInstance().getOnlineUsersMap().put(user, SocketTask.this);
+						}
+						break;
+					}
+					case Protocol.EDIT_INFO: { // 编辑用户资料
+						UserController.getInstance().editInfo(protocol, user);
+						break;
+					}
+					case Protocol.GET_ROOM_LIST: { // 获取房间列表
+						RoomController.getInstance().getRoomList(user, protocol.getTime());
+						break;
+					}
+					case Protocol.CREATE_ROOM: { // 创建房间
+						RoomController.getInstance().createRoom(protocol, user);
+						break;
+					}
+					case Protocol.JOIN_ROOM: { // 加入房间
+						RoomController.getInstance().joinRoom(protocol, user);
+						break;
+					}
+					case Protocol.EXIT_ROOM: { // 退出房间
+						RoomController.getInstance().exitRoom(protocol, user);
+						break;
+					}
+					case Protocol.GET_ROOM_MEMBER: { // 获取房间成员列表
+						RoomController.getInstance().checkRoomMember(protocol, user);
+						break;
+					}
+					case Protocol.MESSAGE: { // 发送消息
+						RoomController.getInstance().sendMessage(protocol, user);
+						break;
+					}
+					case Protocol.DRAW: {
+						RoomController.getInstance().sendDraw(protocol, user);
+						break;
+					}
+					case Protocol.GET_DRAW_LIST: {
+						RoomController.getInstance().checkRoomLineList(protocol, user);
+						break;
+					}
+					case Protocol.HEART_BEAT: {
+						// 用户已登录心跳包
+						break;
+					}
+					case Protocol.UPLOAD_PIC: { // 上传图片
+						RoomController.getInstance().receiveUploadPic(protocol, user);
+						break;
+					}
+					case Protocol.BG_PIC_PUSH: { // 推送背景图片回复
+						RoomController.getInstance().pushBgPic(protocol, user);
+						break;
+					}
+					case Protocol.CLEAR_DRAW: { // 清除绘制线段
+						RoomController.getInstance().clearDraw(user);
+						break;
+					}
+					default:
+						break;
+					}
+				}
+				// 计时结束
+				String time = TimeController.getInstance().end(timeIndex);
+				// 非心跳包打印计时
+				if (protocol.getOrder() != Protocol.HEART_BEAT) {
+					LogController.getInstance()
+							.writeLogStr("Takes " + time + " to deal with " + protocol.getOrderStr());
 				}
 			}
 		} catch (Exception e) {
@@ -317,36 +321,39 @@ class SocketTask implements Runnable {
 	}
 
 	private void clearSocket() {
-		// 打印断开连接信息
-		LogController.getInstance()
-				.writeLogStr("A Client is disconnect :" + socket.getInetAddress().getHostAddress().toString());
-		// 退出操作
-		if (socket != null) {
-			try {
-				// 关闭输入输出流
-				socket.shutdownInput();
-				socket.shutdownOutput();
-				// 关闭连接
-				socket.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-				LogController.getInstance().writeErrorLogStr(e.toString());
+		if (!clear) { // 判断是否清理完毕
+			// 打印断开连接信息
+			LogController.getInstance()
+					.writeLogStr("A Client is disconnect :" + socket.getInetAddress().getHostAddress().toString());
+			// 退出操作
+			if (socket != null) {
+				try {
+					// 关闭连接
+					reader.close();
+					writer.close();
+					socket.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+					LogController.getInstance().writeErrorLogStr(e.toString());
+				}
 			}
-		}
-		// 注销用户
-		if (user != null) { // 已登录
-			if (user.getRoomId() != User.DUMMY_ID) { // 用户退出时是有房间的，退出房间
-				JSONArray content = new JSONArray();
-				Protocol protocol = new Protocol(Protocol.EXIT_ROOM, System.currentTimeMillis(), content);
-				RoomController.getInstance().exitRoom(protocol, user);
+			// 注销用户
+			if (user != null) { // 已登录
+				if (user.getRoomId() != User.DUMMY_ID) { // 用户退出时是有房间的，退出房间
+					JSONArray content = new JSONArray();
+					Protocol protocol = new Protocol(Protocol.EXIT_ROOM, System.currentTimeMillis(), content);
+					RoomController.getInstance().exitRoom(protocol, user);
+				}
+				// map删除退出的用户
+				CommunicationController.getInstance().getOnlineUsersMap().remove(user);
+				user = null;
 			}
-			// map删除退出的用户
-			CommunicationController.getInstance().getOnlineUsersMap().remove(user);
-			user = null;
-		}
-		// 关闭定时器
-		if (timer != null) {
-			timer.cancel();
+			// 关闭定时器
+			if (timer != null) {
+				timer.cancel();
+			}
+			// 清理完毕
+			clear = true;
 		}
 	}
 }
